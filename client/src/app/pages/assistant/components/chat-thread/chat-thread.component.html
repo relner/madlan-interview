@@ -1,0 +1,23 @@
+<div class="thread" aria-live="polite">
+    @for (m of messages; track $index) {
+        <div class="bubble" [class.bubble--user]="m.role === 'user'" [class.bubble--fallback]="m.fallback" [class.bubble--note]="m.note">
+            @if (m.role === 'assistant') { <span class="bubble__who">✦</span> }
+            <div>
+                <p>{{ m.text }}</p>
+                @if (m.question?.hint; as hint) { <p class="bubble__hint">{{ hint }}</p> }
+            </div>
+        </div>
+    }
+    @if (parsing) {
+        <div class="bubble"><span class="bubble__who">✦</span><p class="shimmer">חושב…</p></div>
+    }
+
+    @if (lastQuestion; as q) {
+        <div class="replies">
+            @for (o of q.options; track o.id) {
+                <button type="button" class="pill pill--reply" (click)="reply.emit({ question: q, option: o })">{{ o.label }}</button>
+            }
+        </div>
+    }
+    <div #end></div>
+</div>

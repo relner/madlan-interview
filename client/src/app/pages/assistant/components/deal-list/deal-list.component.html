@@ -1,0 +1,55 @@
+@if (deals.length) {
+    <div class="section-head">
+        <h2>עסקאות שנסגרו</h2>
+        <span class="meta">הכי חדשות</span>
+    </div>
+
+    <div class="deals">
+        @for (d of visible; track d._id) {
+            <article class="tile deal" [class.deal--excluded]="!d.includeInPriceStats">
+                <div class="price num">{{ d.priceNis | nis }}</div>
+                @if (d.pricePerSqmCalculated) { <div class="meta num">{{ d.pricePerSqmCalculated | nis }} למ״ר</div> }
+                <div class="spec">{{ d.propertyType }} · {{ d.rooms ?? '?' }} חד׳ · {{ d.sizeSqm ?? '?' }} מ״ר</div>
+                <div class="meta">{{ d.neighborhood || d.city }} · {{ d.dealDate | dealDate: d.dealDatePrecision }}</div>
+
+                @if (warning(d); as w) { <span class="flag">{{ w }}</span> }
+
+                <div class="amen">
+                    @for (a of amenities; track a.key) {
+                        @if (d[a.key] === true) { <span>{{ a.label }}</span> }
+                        @else if (d[a.key] === null) { <span class="unk">{{ a.label }} ?</span> }
+                    }
+                </div>
+
+                <button class="link" type="button" (click)="toggleSource(d)" [attr.aria-expanded]="openSource() === d._id">
+                    שורה מקורית <span class="id">{{ d.dealId }}</span>
+                </button>
+
+                @if (openSource() === d._id) {
+                    <div class="raw-wrap">
+                        @if (sourceLoading()) {
+                            <mat-spinner diameter="18"></mat-spinner>
+                        } @else {
+                            @for (row of sourceRows(); track row._id) {
+                                <dl class="raw">
+                                    @for (e of rawEntries(row); track e[0]) {
+                                        <div><dt dir="ltr">{{ e[0] }}</dt><dd>{{ e[1] || '—' }}</dd></div>
+                                    }
+                                </dl>
+                            }
+                        }
+                    </div>
+                }
+            </article>
+        }
+    </div>
+
+    @if (!showAll() && deals.length > visible.length) {
+        <div class="center more">
+            <button class="btn btn--soft" type="button" (click)="showAll.set(true)">כל {{ total }} העסקאות</button>
+        </div>
+    }
+    @if (showAll() && total > deals.length) {
+        <p class="meta center more">מוצגות {{ deals.length }} האחרונות</p>
+    }
+}

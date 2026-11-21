@@ -1,0 +1,26 @@
+{
+  "name": "madlan-buyer-assistant-api",
+  "version": "1.0.0",
+  "description": "Buyer assistant API: filters and facts are computed by code, the LLM interprets Hebrew requests and explains computed facts",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index",
+    "dev": "nodemon",
+    "seed": "node scripts/seed.js",
+    "test": "node --test test/*.test.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.12.0",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.0.0",
+    "express": "^4.21.2",
+    "mongoose": "^8.9.0",
+    "morgan": "^1.10.0",
+    "pino": "^9.6.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

@@ -1,0 +1,105 @@
+<div class="bento">
+    <!-- Hero: one number + one AI sentence -->
+    <article class="tile tile--hero">
+        <div>
+            @if (heroIsPrice) {
+                @if (fact('median_price_per_sqm'); as f) {
+                    <div class="label">מחיר למ״ר{{ selectedCity ? ' ב' + selectedCity : '' }}</div>
+                    <div class="huge num" [class.used]="used(f.id)">{{ num(f) | nis }}</div>
+                    <div class="meta hero__meta">חציון · {{ f.n }} עסקאות</div>
+                }
+            } @else {
+                <div class="label">עסקאות{{ selectedCity ? ' ב' + selectedCity : '' }}</div>
+                <div class="huge num" [class.used]="used('matched_count')">{{ count }}</div>
+                <div class="meta hero__meta">{{ count ? 'מעט מדי לחישוב מחיר' : 'נסו להרחיב את החיפוש' }}</div>
+            }
+        </div>
+
+        @if (explaining) {
+            <div class="ai"><span class="who">✦ העוזר</span><p class="shimmer">מנסח…</p></div>
+        } @else if (aiText) {
+            <div class="ai"><span class="who">✦ העוזר</span><p>{{ aiText }}</p></div>
+        } @else {
+            <div class="ai ai--off"><span class="who">✦ העוזר</span><p>אין הסבר כרגע. המספרים מחושבים מהנתונים.</p></div>
+        }
+    </article>
+
+    @if (heroIsPrice) {
+        <article class="tile">
+            <div class="label">עסקאות</div>
+            <div class="big num" [class.used]="used('matched_count')">{{ count }}</div>
+            @if (period; as p) { <div class="meta num">{{ p.from }}–{{ p.to }}</div> }
+        </article>
+    }
+
+    @if (fact('median_price'); as f) {
+        @if (count) {
+            <article class="tile" [class.tile--half]="!heroIsPrice && !cityChange">
+                <div class="label">מחיר חציוני</div>
+                <div class="big num" [class.used]="used(f.id)" [class.muted]="!f.enoughData">{{ num(f) | nis: 'compact' }}</div>
+                <div class="meta">{{ f.n }} עסקאות</div>
+            </article>
+        }
+    }
+
+    @if (cityChange; as c) {
+        @if (c.enoughData) {
+            <article class="tile tile--half">
+                <div class="label">שינוי במחיר למ״ר</div>
+                <div class="big num" [class.used]="used(c.id)">{{ signed($any(c.value)) }}</div>
+                <div class="meta"><span class="num" dir="ltr">{{ c.from?.n }} → {{ c.to?.n }}</span> עסקאות</div>
+            </article>
+        } @else {
+            <article class="tile tile--half tile--tint">
+                <div class="label">שינוי במחיר למ״ר</div>
+                <div class="big muted">אין מספיק נתונים</div>
+                <div class="meta">
+                    @if (c.notComparableReason === 'property_type_mix_changed') { תמהיל נכסים שונה בין התקופות }
+                    @else { {{ c.from?.n }} ו־{{ c.to?.n }} עסקאות · נדרשות {{ c.minSampleSize }} }
+                </div>
+            </article>
+        }
+    }
+
+    <!-- Trend: a plain table — was / now / change. Only published (comparable) changes. -->
+    @if (trends.length && trendPeriods; as tp) {
+        <article class="tile tile--wide">
+            <div class="big">איך השתנה המחיר למ״ר</div>
+            <p class="meta trend-sub">חציון המחיר למ״ר בכל העסקאות בעיר (לא רק אלה שמתאימות לחיפוש), בערים שיש בהן מספיק עסקאות להשוואה</p>
+
+            <div class="ttable" role="table">
+                <div class="trow trow--head" role="row">
+                    <span role="columnheader">עיר</span>
+                    <span role="columnheader" class="num">{{ tp.early.from }}–{{ tp.early.to }}</span>
+                    <span role="columnheader" class="num">{{ tp.late.from }}–{{ tp.late.to }}</span>
+                    <span role="columnheader">שינוי</span>
+                </div>
+                @for (r of trends; track r.city) {
+                    <div class="trow" role="row" [class.trow--sel]="r.selected">
+                        <span class="city" role="cell">{{ r.city }}</span>
+                        <span class="num price" role="cell">{{ r.fact.from?.value | nis }} <small>{{ r.fact.from?.n }} עסקאות</small></span>
+                        <span class="num price" role="cell">{{ r.fact.to?.value | nis }} <small>{{ r.fact.to?.n }} עסקאות</small></span>
+                        <span class="chg num" role="cell" [class.up]="r.change > 0" [class.down]="r.change < 0" [class.used]="used(r.fact.id)">{{ signed(r.change) }}</span>
+                    </div>
+                }
+            </div>
+            @if (anyTrendUsed) {
+                <p class="meta used-note"><i></i>המספר שהעוזר הסתמך עליו</p>
+            }
+
+            <div class="trend-foot">
+                @if (notComparable.length) {
+                    <details>
+                        <summary>עוד {{ notComparable.length }} ערים · אין השוואה הוגנת ⌄</summary>
+                        <div class="reasons">
+                            @for (f of notComparable; track f.id) {
+                                <span>{{ f.city }} · {{ reasons[f.notComparableReason ?? 'not_enough_deals'] }}</span>
+                            }
+                        </div>
+                    </details>
+                }
+                <span class="meta">דירות שונות בכל תקופה · לא תחזית</span>
+            </div>
+        </article>
+    }
+</div>

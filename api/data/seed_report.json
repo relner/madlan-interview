@@ -1,0 +1,807 @@
+{
+  "generatedAt": "2026-11-21T19:55:53.352Z",
+  "rawRows": 530,
+  "documents": 524,
+  "distinctDealIds": 520,
+  "includedInPriceStats": 514,
+  "excluded": [
+    {
+      "dealId": "D100017",
+      "source": "רשות המסים",
+      "reason": "Conflicting prices between sources for the same deal_id"
+    },
+    {
+      "dealId": "D100017",
+      "source": "מתווך",
+      "reason": "Conflicting prices between sources for the same deal_id"
+    },
+    {
+      "dealId": "D100124",
+      "source": "מתווך",
+      "reason": "Conflicting prices between sources for the same deal_id"
+    },
+    {
+      "dealId": "D100124",
+      "source": "רשות המסים",
+      "reason": "Conflicting prices between sources for the same deal_id"
+    },
+    {
+      "dealId": "D100317",
+      "source": "בעל נכס",
+      "reason": "Price below 100000 NIS is not a market price"
+    },
+    {
+      "dealId": "D100032",
+      "source": "בעל נכס",
+      "reason": "Conflicting prices between sources for the same deal_id"
+    },
+    {
+      "dealId": "D100032",
+      "source": "מתווך",
+      "reason": "Conflicting prices between sources for the same deal_id"
+    },
+    {
+      "dealId": "D100303",
+      "source": "בעל נכס",
+      "reason": "Conflicting prices between sources for the same deal_id"
+    },
+    {
+      "dealId": "D100303",
+      "source": "מתווך",
+      "reason": "Conflicting prices between sources for the same deal_id"
+    },
+    {
+      "dealId": "D100251",
+      "source": "רשות המסים",
+      "reason": "Price is missing or zero"
+    }
+  ],
+  "flagCounts": {
+    "new_condition_old_building": 86,
+    "unknown_parking": 19,
+    "exact_duplicate_merged": 6,
+    "price_conflict": 8,
+    "price_per_sqm_mismatch": 28,
+    "month_precision_date": 26,
+    "missing_size": 9,
+    "implausible_price": 1,
+    "zero_price": 1
+  },
+  "cityAliasesApplied": {
+    "בית-שמש": "בית שמש",
+    "Jerusalem": "ירושלים",
+    "מודיעין": "מודיעין-מכבים-רעות",
+    "Tel Aviv-Yafo": "תל אביב-יפו",
+    "מודיעין מכבים רעות": "מודיעין-מכבים-רעות",
+    "תל אביב": "תל אביב-יפו",
+    "תל אביב יפו": "תל אביב-יפו",
+    "ב\"ש": "באר שבע",
+    "באר-שבע": "באר שבע",
+    "ת\"א": "תל אביב-יפו"
+  },
+  "neighborhoodAliasesApplied": {
+    "מרכז": "מרכז העיר",
+    "רמב\"ש ג'": "רמת בית שמש ג'",
+    "רמת בית שמש א": "רמת בית שמש א'",
+    "רמת בית שמש ג": "רמת בית שמש ג'",
+    "רמב\"ש א'": "רמת בית שמש א'",
+    "Florentin": "פלורנטין"
+  },
+  "cities": [
+    "אשדוד",
+    "באר שבע",
+    "בית שמש",
+    "בת ים",
+    "גבעתיים",
+    "הרצליה",
+    "חולון",
+    "חיפה",
+    "ירושלים",
+    "כפר סבא",
+    "מודיעין-מכבים-רעות",
+    "נתניה",
+    "פתח תקווה",
+    "ראשון לציון",
+    "רחובות",
+    "רמת גן",
+    "רעננה",
+    "תל אביב-יפו"
+  ],
+  "exactDuplicatesMerged": [
+    "D100196",
+    "D100311",
+    "D100099",
+    "D100416",
+    "D100215",
+    "D100025"
+  ],
+  "sourcesMerged": [],
+  "priceConflicts": [
+    {
+      "dealId": "D100017",
+      "versions": [
+        {
+          "source": "רשות המסים",
+          "priceNis": 1919000
+        },
+        {
+          "source": "מתווך",
+          "priceNis": 1851548
+        }
+      ]
+    },
+    {
+      "dealId": "D100124",
+      "versions": [
+        {
+          "source": "מתווך",
+          "priceNis": 5429440
+        },
+        {
+          "source": "רשות המסים",
+          "priceNis": 5727000
+        }
+      ]
+    },
+    {
+      "dealId": "D100032",
+      "versions": [
+        {
+          "source": "בעל נכס",
+          "priceNis": 5141000
+        },
+        {
+          "source": "מתווך",
+          "priceNis": 5343137
+        }
+      ]
+    },
+    {
+      "dealId": "D100303",
+      "versions": [
+        {
+          "source": "בעל נכס",
+          "priceNis": 6064000
+        },
+        {
+          "source": "מתווך",
+          "priceNis": 6195332
+        }
+      ]
+    }
+  ],
+  "versionConflicts": [],
+  "flaggedDeals": {
+    "price_per_sqm_mismatch": [
+      {
+        "dealId": "D100017",
+        "priceNis": 1851548,
+        "sizeSqm": 127,
+        "reported": 15110,
+        "calculated": 14579
+      },
+      {
+        "dealId": "D100178",
+        "priceNis": 3586000,
+        "sizeSqm": 65,
+        "reported": 68592,
+        "calculated": 55169
+      },
+      {
+        "dealId": "D100078",
+        "priceNis": 4180000,
+        "sizeSqm": 90,
+        "reported": 36139,
+        "calculated": 46444
+      },
+      {
+        "dealId": "D100124",
+        "priceNis": 5429440,
+        "sizeSqm": 146,
+        "reported": 39226,
+        "calculated": 37188
+      },
+      {
+        "dealId": "D100328",
+        "priceNis": 13549000,
+        "sizeSqm": 246,
+        "reported": 40950,
+        "calculated": 55077
+      },
+      {
+        "dealId": "D100417",
+        "priceNis": 1884000,
+        "sizeSqm": 109,
+        "reported": 19528,
+        "calculated": 17284
+      },
+      {
+        "dealId": "D100283",
+        "priceNis": 2589000,
+        "sizeSqm": 69,
+        "reported": 40981,
+        "calculated": 37522
+      },
+      {
+        "dealId": "D100444",
+        "priceNis": 5406000,
+        "sizeSqm": 120,
+        "reported": 35385,
+        "calculated": 45050
+      },
+      {
+        "dealId": "D100431",
+        "priceNis": 4854000,
+        "sizeSqm": 134,
+        "reported": 41291,
+        "calculated": 36224
+      },
+      {
+        "dealId": "D100362",
+        "priceNis": 3056000,
+        "sizeSqm": 121,
+        "reported": 27912,
+        "calculated": 25256
+      },
+      {
+        "dealId": "D100510",
+        "priceNis": 5747000,
+        "sizeSqm": 129,
+        "reported": 41929,
+        "calculated": 44550
+      },
+      {
+        "dealId": "D100032",
+        "priceNis": 5343137,
+        "sizeSqm": 88,
+        "reported": 58420,
+        "calculated": 60717
+      },
+      {
+        "dealId": "D100303",
+        "priceNis": 6195332,
+        "sizeSqm": 134,
+        "reported": 45254,
+        "calculated": 46234
+      },
+      {
+        "dealId": "D100426",
+        "priceNis": 2683000,
+        "sizeSqm": 113,
+        "reported": 25829,
+        "calculated": 23743
+      },
+      {
+        "dealId": "D100313",
+        "priceNis": 10401000,
+        "sizeSqm": 129,
+        "reported": 58234,
+        "calculated": 80628
+      },
+      {
+        "dealId": "D100414",
+        "priceNis": 5816000,
+        "sizeSqm": 134,
+        "reported": 40797,
+        "calculated": 43403
+      },
+      {
+        "dealId": "D100044",
+        "priceNis": 4024000,
+        "sizeSqm": 126,
+        "reported": 27033,
+        "calculated": 31937
+      },
+      {
+        "dealId": "D100331",
+        "priceNis": 4195000,
+        "sizeSqm": 161,
+        "reported": 21163,
+        "calculated": 26056
+      },
+      {
+        "dealId": "D100085",
+        "priceNis": 3913000,
+        "sizeSqm": 132,
+        "reported": 26903,
+        "calculated": 29644
+      },
+      {
+        "dealId": "D100430",
+        "priceNis": 14285000,
+        "sizeSqm": 258,
+        "reported": 59829,
+        "calculated": 55368
+      },
+      {
+        "dealId": "D100390",
+        "priceNis": 5017000,
+        "sizeSqm": 121,
+        "reported": 46333,
+        "calculated": 41463
+      },
+      {
+        "dealId": "D100075",
+        "priceNis": 2691000,
+        "sizeSqm": 74,
+        "reported": 37351,
+        "calculated": 36365
+      },
+      {
+        "dealId": "D100434",
+        "priceNis": 8154000,
+        "sizeSqm": 202,
+        "reported": 34189,
+        "calculated": 40366
+      },
+      {
+        "dealId": "D100300",
+        "priceNis": 9063000,
+        "sizeSqm": 132,
+        "reported": 80075,
+        "calculated": 68659
+      },
+      {
+        "dealId": "D100480",
+        "priceNis": 2024000,
+        "sizeSqm": 207,
+        "reported": 9334,
+        "calculated": 9778
+      },
+      {
+        "dealId": "D100206",
+        "priceNis": 5909000,
+        "sizeSqm": 155,
+        "reported": 48540,
+        "calculated": 38123
+      },
+      {
+        "dealId": "D100109",
+        "priceNis": 2800000,
+        "sizeSqm": 75,
+        "reported": 38943,
+        "calculated": 37333
+      },
+      {
+        "dealId": "D100449",
+        "priceNis": 2805000,
+        "sizeSqm": 103,
+        "reported": 21313,
+        "calculated": 27233
+      }
+    ],
+    "new_condition_old_building": [
+      {
+        "dealId": "D100301",
+        "yearBuilt": 1985,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100432",
+        "yearBuilt": 1950,
+        "dealYear": 2024
+      },
+      {
+        "dealId": "D100511",
+        "yearBuilt": 1978,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100232",
+        "yearBuilt": 1987,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100402",
+        "yearBuilt": 1981,
+        "dealYear": 2021
+      },
+      {
+        "dealId": "D100363",
+        "yearBuilt": 2012,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100178",
+        "yearBuilt": 2005,
+        "dealYear": 2022
+      },
+      {
+        "dealId": "D100019",
+        "yearBuilt": 2004,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100080",
+        "yearBuilt": 1956,
+        "dealYear": 2022
+      },
+      {
+        "dealId": "D100065",
+        "yearBuilt": 1995,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100257",
+        "yearBuilt": 1977,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100108",
+        "yearBuilt": 1960,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100306",
+        "yearBuilt": 1982,
+        "dealYear": 2022
+      },
+      {
+        "dealId": "D100367",
+        "yearBuilt": 1982,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100277",
+        "yearBuilt": 2003,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100103",
+        "yearBuilt": 2008,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100448",
+        "yearBuilt": 1975,
+        "dealYear": 2024
+      },
+      {
+        "dealId": "D100145",
+        "yearBuilt": 1959,
+        "dealYear": 2024
+      },
+      {
+        "dealId": "D100004",
+        "yearBuilt": 2013,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100049",
+        "yearBuilt": 1961,
+        "dealYear": 2024
+      },
+      {
+        "dealId": "D100330",
+        "yearBuilt": 1975,
+        "dealYear": 2022
+      },
+      {
+        "dealId": "D100128",
+        "yearBuilt": 2012,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100392",
+        "yearBuilt": 1993,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100252",
+        "yearBuilt": 1998,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100079",
+        "yearBuilt": 1955,
+        "dealYear": 2024
+      },
+      {
+        "dealId": "D100312",
+        "yearBuilt": 2013,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100365",
+        "yearBuilt": 1984,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100385",
+        "yearBuilt": 1995,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100319",
+        "yearBuilt": 1997,
+        "dealYear": 2024
+      },
+      {
+        "dealId": "D100490",
+        "yearBuilt": 1950,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100073",
+        "yearBuilt": 2006,
+        "dealYear": 2022
+      },
+      {
+        "dealId": "D100336",
+        "yearBuilt": 1981,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100185",
+        "yearBuilt": 1993,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100087",
+        "yearBuilt": 1972,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100170",
+        "yearBuilt": 2001,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100446",
+        "yearBuilt": 2014,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100093",
+        "yearBuilt": 2010,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100100",
+        "yearBuilt": 1999,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100332",
+        "yearBuilt": 2008,
+        "dealYear": 2022
+      },
+      {
+        "dealId": "D100027",
+        "yearBuilt": 1958,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100216",
+        "yearBuilt": 2002,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100064",
+        "yearBuilt": 2012,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100351",
+        "yearBuilt": 1966,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100422",
+        "yearBuilt": 1956,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100396",
+        "yearBuilt": 1980,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100388",
+        "yearBuilt": 2003,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100393",
+        "yearBuilt": 1996,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100421",
+        "yearBuilt": 1973,
+        "dealYear": 2024
+      },
+      {
+        "dealId": "D100433",
+        "yearBuilt": 2009,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100266",
+        "yearBuilt": 2013,
+        "dealYear": 2021
+      },
+      {
+        "dealId": "D100172",
+        "yearBuilt": 1955,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100413",
+        "yearBuilt": 1958,
+        "dealYear": 2024
+      },
+      {
+        "dealId": "D100098",
+        "yearBuilt": 2005,
+        "dealYear": 2022
+      },
+      {
+        "dealId": "D100161",
+        "yearBuilt": 1970,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100265",
+        "yearBuilt": 2006,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100176",
+        "yearBuilt": 2014,
+        "dealYear": 2022
+      },
+      {
+        "dealId": "D100198",
+        "yearBuilt": 1997,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100175",
+        "yearBuilt": 1987,
+        "dealYear": 2022
+      },
+      {
+        "dealId": "D100190",
+        "yearBuilt": 1987,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100329",
+        "yearBuilt": 1982,
+        "dealYear": 2024
+      },
+      {
+        "dealId": "D100044",
+        "yearBuilt": 1984,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100308",
+        "yearBuilt": 2002,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100315",
+        "yearBuilt": 2019,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100231",
+        "yearBuilt": 1962,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100372",
+        "yearBuilt": 1951,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100099",
+        "yearBuilt": 2003,
+        "dealYear": 2024
+      },
+      {
+        "dealId": "D100499",
+        "yearBuilt": 1990,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100116",
+        "yearBuilt": 1961,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100127",
+        "yearBuilt": 1986,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100430",
+        "yearBuilt": 2011,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100340",
+        "yearBuilt": 1969,
+        "dealYear": 2021
+      },
+      {
+        "dealId": "D100416",
+        "yearBuilt": 1978,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100272",
+        "yearBuilt": 2003,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100192",
+        "yearBuilt": 1974,
+        "dealYear": 2022
+      },
+      {
+        "dealId": "D100101",
+        "yearBuilt": 2017,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100013",
+        "yearBuilt": 1951,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100062",
+        "yearBuilt": 2013,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100465",
+        "yearBuilt": 2010,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100206",
+        "yearBuilt": 1989,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100035",
+        "yearBuilt": 1997,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100360",
+        "yearBuilt": 2016,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100224",
+        "yearBuilt": 1981,
+        "dealYear": 2023
+      },
+      {
+        "dealId": "D100243",
+        "yearBuilt": 1978,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100509",
+        "yearBuilt": 2000,
+        "dealYear": 2026
+      },
+      {
+        "dealId": "D100229",
+        "yearBuilt": 1968,
+        "dealYear": 2025
+      },
+      {
+        "dealId": "D100188",
+        "yearBuilt": 2013,
+        "dealYear": 2026
+      }
+    ],
+    "invalid_date": []
+  }
+}

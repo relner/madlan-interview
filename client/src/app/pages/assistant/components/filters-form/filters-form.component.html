@@ -1,0 +1,77 @@
+<form class="sheet__body" (ngSubmit)="submit()">
+    <div class="sheet__head">
+        <h3>סינון</h3>
+        <button type="button" class="link" (click)="clear()">ניקוי</button>
+        <button type="button" class="sheet__close" (click)="closed.emit()" aria-label="סגירה">✕</button>
+    </div>
+
+    <div>
+        <div class="f-label">מטרה</div>
+        <div class="seg-ctl" role="radiogroup" aria-label="מטרה">
+            @for (p of purposes; track p.label) {
+                <button type="button" role="radio"
+                    [class.on]="model.purpose === p.value"
+                    [attr.aria-checked]="model.purpose === p.value"
+                    (click)="model.purpose = p.value">{{ p.label }}</button>
+            }
+        </div>
+    </div>
+
+    <div>
+        <div class="f-label">עיר</div>
+        <mat-form-field appearance="fill" subscriptSizing="dynamic" class="soft-field">
+            <mat-select multiple name="cities" placeholder="כל הערים" [(ngModel)]="model.cities" (selectionChange)="onCitiesChange()" aria-label="עיר">
+                @for (c of options?.cities ?? []; track c) { <mat-option [value]="c">{{ c }}</mat-option> }
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    @if (model.cities.length) {
+        <div>
+            <div class="f-label">שכונה</div>
+            <mat-form-field appearance="fill" subscriptSizing="dynamic" class="soft-field">
+                <mat-select multiple name="neighborhoods" placeholder="כל השכונות" [(ngModel)]="model.neighborhoods" aria-label="שכונה">
+                    @for (n of neighborhoodOptions; track n) { <mat-option [value]="n">{{ n }}</mat-option> }
+                </mat-select>
+            </mat-form-field>
+        </div>
+    }
+
+    <div>
+        <div class="f-label">סוג נכס</div>
+        <mat-form-field appearance="fill" subscriptSizing="dynamic" class="soft-field">
+            <mat-select multiple name="propertyTypes" placeholder="הכל" [(ngModel)]="model.propertyTypes" aria-label="סוג נכס">
+                @for (t of options?.propertyTypes ?? []; track t) { <mat-option [value]="t">{{ t }}</mat-option> }
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    <div class="two">
+        <label>
+            <span class="f-label">חדרים מ־</span>
+            <input class="soft-input num" type="number" name="roomsMin" min="1" max="12" step="0.5" placeholder="הכל" [(ngModel)]="model.roomsMin">
+        </label>
+        <label>
+            <span class="f-label">עד מחיר</span>
+            <input class="soft-input num" type="number" name="priceMax" min="0" step="100000" placeholder="ללא" [(ngModel)]="model.priceMax">
+        </label>
+    </div>
+
+    <label class="offer">
+        <span class="f-label">הציעו לכם נכס? המחיר שביקשו</span>
+        <input class="soft-input num" type="number" name="offerPrice" min="0" step="10000" placeholder="נשווה לעסקאות דומות" [(ngModel)]="model.offerPrice">
+    </label>
+
+    <div>
+        <div class="f-label">חובה</div>
+        <div class="toggles">
+            @for (m of mustHaves; track m.key) {
+                <button type="button" [class.on]="model[m.key]" [attr.aria-pressed]="!!model[m.key]" (click)="toggleMustHave(m.key)">{{ m.label }}</button>
+            }
+        </div>
+    </div>
+
+    <button class="btn btn--dark btn--block" type="submit" [disabled]="searching || !options">
+        @if (searching) { מחפשים… } @else { הצגת עסקאות }
+    </button>
+</form>

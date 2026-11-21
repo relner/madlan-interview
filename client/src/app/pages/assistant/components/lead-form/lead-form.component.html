@@ -1,0 +1,31 @@
+<article class="tile tile--ink lead">
+    @if (saved()) {
+        <div class="big">נשמר, {{ name }}</div>
+        <div class="label">בגרסת ההדגמה לא נשלחת הודעה.</div>
+    } @else {
+        <div class="big">לשמור את החיפוש?</div>
+        <div class="label">נשלח סיכום של {{ total }} העסקאות</div>
+
+        <form class="lead-row" (ngSubmit)="submit()" #f="ngForm">
+            <input class="field" name="name" required maxlength="100" placeholder="שם" aria-label="שם" [(ngModel)]="name">
+            <input class="field" name="contact" required dir="ltr"
+                [type]="channel === 'email' ? 'email' : 'tel'"
+                [attr.autocomplete]="channel === 'email' ? 'email' : 'tel'"
+                [placeholder]="channel === 'email' ? 'מייל' : 'טלפון לוואטסאפ'"
+                [attr.aria-label]="channel === 'email' ? 'מייל' : 'טלפון לוואטסאפ'"
+                [(ngModel)]="contact">
+            <!-- Honeypot: hidden from people, bots fill it -->
+            <input class="hp" name="hp" tabindex="-1" autocomplete="off" aria-hidden="true" [(ngModel)]="hp">
+            <button class="btn btn--light" type="submit" [disabled]="sending() || !f.valid">
+                @if (sending()) { שומרים… } @else { שמירה }
+            </button>
+        </form>
+
+        <div class="lead-foot">
+            <button type="button" class="link link--light" (click)="switchChannel()">
+                {{ channel === 'whatsapp' ? 'מייל במקום' : 'וואטסאפ במקום' }}
+            </button>
+            @if (error()) { <span class="lead-error">{{ error() }}</span> }
+        </div>
+    }
+</article>

@@ -1,0 +1,31 @@
+export interface Deal {
+    _id: string;
+    dealId: string;
+    city: string | null;
+    neighborhood: string | null;
+    street: string | null;
+    propertyType: string | null;
+    rooms: number | null;
+    sizeSqm: number | null;
+    floor: number | null;
+    totalFloors: number | null;
+    yearBuilt: number | null;
+    condition: string | null;
+    hasElevator: boolean | null;
+    hasParking: boolean | null;
+    hasBalcony: boolean | null;
+    hasSafeRoom: boolean | null;
+    dealDate: string | null;
+    dealDatePrecision: 'day' | 'month' | null;
+    dealYear: number | null;
+    priceNis: number | null;
+    pricePerSqmReported: number | null;
+    pricePerSqmCalculated: number | null;
+    source: string | null;
+    sources: string[];
+    qualityFlags: string[];
+    includeInPriceStats: boolean;
+    exclusionReason: string | null;
+    conflictWith?: { source: string; priceNis: number }[];
+    raw?: Record<string, string>;
+}

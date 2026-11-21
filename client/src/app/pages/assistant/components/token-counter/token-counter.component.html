@@ -1,0 +1,51 @@
+@let t = usage.totals();
+<aside class="tokens" [class.tokens--open]="open()" dir="ltr" aria-label="Token counter">
+    @if (open()) {
+        <div class="tokens__panel">
+            <div class="tokens__head">
+                <strong>Tokens · this session</strong>
+                <button type="button" class="tokens__x" (click)="open.set(false)" aria-label="Close">✕</button>
+            </div>
+
+            @if (usage.entries().length) {
+                <ol class="tokens__list">
+                    @for (e of usage.entries(); track e.id) {
+                        <li class="tokens__row" [class.tokens__row--free]="!e.usage">
+                            <div class="tokens__what">
+                                <span dir="rtl">{{ stepLabels[e.step] }}</span>
+                                <span class="tokens__src tokens__src--{{ e.source }}" dir="rtl">{{ sourceLabels[e.source] ?? e.source }}</span>
+                            </div>
+                            @if (e.usage; as u) {
+                                <div class="tokens__nums">
+                                    <span>{{ modelName(u.model) }}</span>
+                                    <span>in {{ tokens(inputOf(e)) }}@if (u.cacheReadTokens) { <i>({{ tokens(u.cacheReadTokens) }} cached)</i> }</span>
+                                    <span>out {{ tokens(u.outputTokens) }}</span>
+                                    <span>{{ (u.ms / 1000).toFixed(1) }}s</span>
+                                    <b>{{ cost(u.costUsd) }}</b>
+                                </div>
+                            } @else {
+                                <div class="tokens__nums"><span>0 tokens</span><b>$0</b></div>
+                            }
+                        </li>
+                    }
+                </ol>
+            } @else {
+                <p class="tokens__empty">No interactions yet</p>
+            }
+
+            <div class="tokens__total">
+                <span>{{ t.modelCalls }} model calls / {{ t.interactions }} interactions</span>
+                <span>in {{ tokens(t.inputTokens) }} · out {{ tokens(t.outputTokens) }}</span>
+                <b>{{ cost(t.costUsd) }}</b>
+            </div>
+            @if (usage.entries().length) {
+                <button type="button" class="tokens__clear" (click)="usage.clear()">Clear</button>
+            }
+        </div>
+    }
+
+    <button type="button" class="tokens__pill" (click)="open.set(!open())" [attr.aria-expanded]="open()">
+        <span class="tokens__dot"></span>
+        {{ tokens(t.inputTokens + t.outputTokens) }} tokens · {{ cost(t.costUsd) }}
+    </button>
+</aside>

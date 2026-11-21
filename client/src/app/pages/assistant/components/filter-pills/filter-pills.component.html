@@ -1,0 +1,9 @@
+<div class="pills" role="list" aria-label="הסינון הנוכחי">
+    @for (p of pills; track p.label) {
+        <span class="pill" role="listitem" [class.pill--ai]="aiFilled" [matTooltip]="tooltip" matTooltipPosition="below">
+            {{ p.label }}
+            <button type="button" class="pill__x" (click)="remove(p)" [attr.aria-label]="'הסרת ' + p.label">✕</button>
+        </span>
+    }
+    <button type="button" class="pill pill--dark" (click)="openSheet.emit()">סינון</button>
+</div>

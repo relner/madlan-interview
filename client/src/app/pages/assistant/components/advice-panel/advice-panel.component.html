@@ -1,0 +1,40 @@
+@if (explaining) {
+    <section class="advice" aria-busy="true">
+        <div class="advice__head"><span class="spark">✦</span> <span class="shimmer">מכין המלצות לפי העסקאות…</span></div>
+        <div class="advice__grid">
+            @for (i of [1, 2, 3]; track i) {
+                <div class="advice-card advice-card--loading">
+                    <span class="bar bar--title"></span>
+                    <span class="bar"></span>
+                    <span class="bar bar--short"></span>
+                    <span class="bar bar--fact"></span>
+                </div>
+            }
+        </div>
+    </section>
+} @else if (cards.length) {
+    <section class="advice">
+        <div class="advice__head"><span class="spark">✦</span> מה אנחנו ממליצים</div>
+        <div class="advice__grid">
+            @for (c of cards; track c.headline) {
+                <article class="advice-card">
+                    <h3>{{ c.headline }}</h3>
+                    @if (c.reason) { <p>{{ c.reason }}</p> }
+                    @if (c.evidence.length) {
+                        <ul class="evidence">
+                            @for (e of c.evidence; track e) { <li class="num">{{ e }}</li> }
+                        </ul>
+                    }
+                </article>
+            }
+        </div>
+        <p class="meta">על סמך עסקאות שנסגרו · לא ייעוץ השקעות ולא תחזית</p>
+    </section>
+} @else if (hasAdviceFacts) {
+    <section class="advice advice--plain">
+        <div class="advice__head">מה רואים בעסקאות</div>
+        <ul class="evidence evidence--plain">
+            @for (l of plainLines; track l) { <li class="num">{{ l }}</li> }
+        </ul>
+    </section>
+}

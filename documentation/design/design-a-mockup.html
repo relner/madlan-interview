@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design A — Search-first</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f8fa; --surface:#fff; --text:#111827; --text-2:#4b5563; --text-3:#9ca3af;
+  --line:#e5e7eb; --line-2:#f0f1f3;
+  --accent:#2563eb; --accent-soft:#eff4ff;
+  --ai:#7c3aed; --ai-soft:#f5f0ff;
+  --up:#15803d; --down:#b91c1c; --warn:#b45309; --warn-soft:#fff7ed;
+  --r-sm:8px; --r-md:12px; --r-lg:20px; --r-pill:999px;
+  --sh-1:0 1px 2px rgba(17,24,39,.05); --sh-2:0 8px 24px rgba(17,24,39,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Heebo,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums}
+.ltr{direction:ltr;unicode-bidi:isolate}
+.mock-label{font:600 11px/1 ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#a1a1aa;direction:ltr;text-align:left;max-width:760px;margin:48px auto 12px;padding:0 16px}
+
+/* top bar */
+.top{height:56px;display:flex;align-items:center;justify-content:space-between;max-width:760px;margin:0 auto;padding:0 16px}
+.brand{font-weight:700;font-size:17px;letter-spacing:-.01em}
+.brand b{color:var(--accent)}
+.link{background:none;border:0;font:inherit;font-size:14px;color:var(--text-2);cursor:pointer;padding:6px 8px;border-radius:var(--r-sm)}
+.link:hover{background:var(--line-2)}
+
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 40px}
+
+/* search */
+.search{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-2);padding:6px 6px 6px 6px;display:flex;align-items:center;gap:6px}
+.search input{flex:1;min-width:0;border:0;outline:0;font:inherit;font-size:17px;padding:12px 14px;background:transparent;color:var(--text)}
+.search input::placeholder{color:var(--text-3)}
+.btn{border:0;font:inherit;font-weight:600;font-size:15px;border-radius:var(--r-md);padding:10px 18px;cursor:pointer}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-ghost{background:transparent;color:var(--accent)}
+.btn-icon{width:44px;height:44px;padding:0;display:grid;place-items:center;border-radius:14px}
+
+/* refine chips */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface);font-size:14px;color:var(--text)}
+.chip .x{color:var(--text-3);font-size:13px}
+.chip-ai{border-color:#e4d8fd;background:var(--ai-soft)}
+.chip-add{border-style:dashed;color:var(--text-2)}
+.chip-filter{background:var(--text);color:#fff;border-color:var(--text);font-weight:500}
+
+.ask{margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px;color:var(--text-2)}
+.spark{color:var(--ai);font-weight:700}
+.reply{height:28px;padding:0 10px;border-radius:var(--r-pill);border:1px solid #e4d8fd;background:#fff;color:var(--ai);font:inherit;font-size:13px}
+
+/* sections */
+.section{margin-top:28px}
+.section-h{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 10px}
+.section-h h2{margin:0;font-size:13px;font-weight:600;color:var(--text-2);letter-spacing:.01em}
+.section-h .meta{font-size:13px;color:var(--text-3)}
+
+/* AI answer */
+.answer{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 20px;box-shadow:var(--sh-1);position:relative}
+.answer::before{content:"";position:absolute;inset-inline-start:0;top:16px;bottom:16px;width:3px;border-radius:3px;background:var(--ai)}
+.answer .tag{font-size:12px;font-weight:600;color:var(--ai);margin-bottom:6px;display:block}
+.answer p{margin:0;font-size:17px;line-height:1.6}
+.based{margin-top:10px;font-size:12px;color:var(--text-3);display:flex;gap:4px;align-items:center}
+.ref{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--ai-soft);color:var(--ai);font-size:11px;font-weight:700;vertical-align:2px;margin-inline-start:2px}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.stat{background:var(--surface);padding:16px 18px;position:relative}
+.stat .k{font-size:13px;color:var(--text-2)}
+.stat .v{font-size:24px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+.stat .n{font-size:12px;color:var(--text-3)}
+.stat .ref{position:absolute;top:14px;inset-inline-end:14px}
+.stat.weak .v{color:var(--text-3)}
+.pill-warn{display:inline-block;font-size:11px;font-weight:600;color:var(--warn);background:var(--warn-soft);border-radius:var(--r-pill);padding:1px 8px;margin-top:4px}
+
+/* trend */
+.trend{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.trow{display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;padding:12px 18px;border-top:1px solid var(--line-2)}
+.trow:first-child{border-top:0}
+.trow .city{font-weight:500}
+.trow .from{font-size:13px;color:var(--text-3)}
+.trow .chg{font-weight:700;min-width:64px;text-align:end}
+.up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--text-2)}
+.trow.focus{background:var(--accent-soft)}
+.trow.muted .city,.trow.muted .chg{color:var(--text-3);font-weight:400}
+.trow.more{color:var(--text-2);font-size:14px;cursor:pointer}
+.foot{font-size:12px;color:var(--text-3);margin:8px 2px 0}
+
+/* deals */
+.deal{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px;display:grid;grid-template-columns:1fr auto;gap:4px 16px}
+.deal + .deal{margin-top:10px}
+.deal .title{font-weight:600}
+.deal .place{font-size:14px;color:var(--text-2)}
+.deal .price{font-size:19px;font-weight:700;text-align:end;letter-spacing:-.01em}
+.deal .sqm{font-size:13px;color:var(--text-3);text-align:end}
+.deal .row2{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:8px;font-size:13px;color:var(--text-2)}
+.feat{display:inline-flex;gap:4px;align-items:center}
+.feat.yes::before{content:"✓";color:var(--up);font-weight:700}
+.feat.no{color:var(--text-3);text-decoration:line-through}
+.feat.unk{color:var(--text-3)}
+.feat.unk::after{content:"?";font-weight:700}
+.flag{font-size:12px;color:var(--warn);background:var(--warn-soft);border-radius:var(--r-sm);padding:1px 8px}
+.deal .src{grid-column:1/-1;display:flex;justify-content:space-between;margin-top:8px;padding-top:10px;border-top:1px solid var(--line-2);font-size:13px;color:var(--text-3)}
+.deal .src a{color:var(--accent);text-decoration:none}
+.showmore{display:block;margin:14px auto 0}
+
+/* lead */
+.lead{margin-top:28px;background:var(--text);color:#fff;border-radius:var(--r-lg);padding:20px;display:grid;gap:14px}
+.lead h3{margin:0;font-size:17px}
+.lead p{margin:2px 0 0;font-size:14px;color:#d1d5db}
+.lead form{display:flex;gap:8px;flex-wrap:wrap}
+.lead input{flex:1 1 160px;min-width:0;height:44px;border-radius:var(--r-md);border:0;padding:0 14px;font:inherit}
+.seg{display:inline-flex;background:#374151;border-radius:var(--r-md);padding:3px}
+.seg span{padding:7px 12px;border-radius:9px;font-size:14px;color:#d1d5db}
+.seg .on{background:#fff;color:var(--text);font-weight:600}
+.lead .check{font-size:13px;color:#d1d5db;display:flex;gap:6px;align-items:center}
+
+.footer{font-size:12px;color:var(--text-3);text-align:center;margin-top:28px}
+
+/* empty */
+.hero{min-height:58vh;display:flex;flex-direction:column;justify-content:center}
+.hero h1{margin:0 0 18px;font-size:32px;line-height:1.2;letter-spacing:-.02em}
+.examples{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.examples .chip{color:var(--text-2)}
+.hero .manual{margin-top:18px;font-size:14px;color:var(--text-3)}
+.hero .manual a{color:var(--accent);text-decoration:none}
+
+/* fallback + sheet */
+.banner{display:flex;gap:10px;align-items:center;margin-top:12px;padding:10px 14px;border-radius:var(--r-md);background:var(--warn-soft);color:var(--warn);font-size:14px}
+.sheet{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-2);padding:18px}
+.sheet-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.sheet-h b{font-size:15px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;color:var(--text-2)}
+.field .box{height:44px;border:1px solid var(--line);border-radius:var(--r-md);padding:0 12px;display:flex;align-items:center;color:var(--text);font-size:15px}
+.field .box.ph{color:var(--text-3)}
+.full{grid-column:1/-1}
+.toggles{display:flex;gap:8px;flex-wrap:wrap}
+.toggles .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.sheet .actions{display:flex;gap:8px;justify-content:flex-start;margin-top:16px}
+
+@media (max-width:600px){
+  .stats{grid-template-columns:1fr 1fr}
+  .stats .stat:first-child{grid-column:1/-1}
+  .hero h1{font-size:26px}
+  .deal{grid-template-columns:1fr}
+  .deal .price,.deal .sqm{text-align:start}
+  .trow{grid-template-columns:1fr auto;gap:2px 12px}
+  .trow .from{grid-column:1;grid-row:2}
+  .trow .chg{grid-row:1/3;grid-column:2}
+  .lead .seg{width:100%}
+  .lead .seg span{flex:1;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 1. RESULTS ============ -->
+<div class="mock-label">1 · Results state</div>
+
+<header class="top">
+  <div class="brand">דירות<b>.</b>דומות</div>
+  <button class="link">שמירה</button>
+</header>
+
+<main class="wrap">
+  <div class="search">
+    <input value="דירת 4 חדרים בחולון עד 4.5 מיליון" aria-label="מה אתם מחפשים?">
+    <button class="btn btn-primary btn-icon" aria-label="חיפוש">←</button>
+  </div>
+
+  <div class="chips">
+    <span class="chip chip-ai">חולון <span class="x">✕</span></span>
+    <span class="chip chip-ai">4+ חדרים <span class="x">✕</span></span>
+    <span class="chip chip-ai">עד 4.5 מ׳ ₪ <span class="x">✕</span></span>
+    <span class="chip chip-add">+ חניה</span>
+    <span class="chip chip-filter">סינון</span>
+  </div>
+
+  <div class="ask">
+    <span class="spark">✦</span> למגורים או להשקעה?
+    <button class="reply">למגורים</button>
+    <button class="reply">להשקעה</button>
+  </div>
+
+  <section class="section">
+    <div class="answer">
+      <span class="tag">✦ סיכום</span>
+      <p>נמצאו 6 עסקאות בחולון. המחיר החציוני 3,683,000 ₪, כ-35,566 ₪ למ״ר. 6 עסקאות הן מעט — כדאי להרחיב את החיפוש.</p>
+      <div class="based">מבוסס על <span class="ref">1</span><span class="ref">2</span><span class="ref">3</span></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-h"><h2>במספרים</h2><span class="meta">2022–2025</span></div>
+    <div class="stats">
+      <div class="stat"><span class="ref">1</span><div class="k">עסקאות</div><div class="v num">6</div></div>
+      <div class="stat"><span class="ref">2</span><div class="k">מחיר חציוני</div><div class="v num">3,683,000 ₪</div><div class="n">לפי 6</div></div>
+      <div class="stat weak"><span class="ref">3</span><div class="k">חציון למ״ר</div><div class="v num">35,566 ₪</div><div class="n">לפי 6</div><span class="pill-warn">מעט נתונים</span></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-h"><h2>שינוי מחיר למ״ר</h2><span class="meta ltr">2021–23 → 2024–26</span></div>
+    <div class="trend">
+      <div class="trow focus"><span class="city">חולון</span><span class="from num">39,169 → 38,907 ₪ · 17/20</span><span class="chg flat num ltr">−0.7%</span></div>
+      <div class="trow"><span class="city">ראשון לציון</span><span class="from num">30,013 → 35,885 ₪ · 10/19</span><span class="chg up num ltr">+19.6%</span></div>
+      <div class="trow"><span class="city">נתניה</span><span class="from num">37,662 → 40,608 ₪ · 13/22</span><span class="chg up num ltr">+7.8%</span></div>
+      <div class="trow"><span class="city">אשדוד</span><span class="from num">26,985 → 29,008 ₪ · 11/13</span><span class="chg up num ltr">+7.5%</span></div>
+      <div class="trow more muted"><span class="city">עוד 14 ערים</span><span class="from">אין מספיק נתונים להשוואה</span><span class="chg">⌄</span></div>
+    </div>
+    <p class="foot">עבר, לא תחזית. דירות שונות בכל תקופה.</p>
+  </section>
+
+  <section class="section">
+    <div class="section-h"><h2>עסקאות</h2><span class="meta">6</span></div>
+
+    <article class="deal">
+      <div><div class="title">דירה · 4.5 חד׳ · 99 מ״ר</div><div class="place">נאות יהודית, לוי אשכול</div></div>
+      <div><div class="price num">3,839,000 ₪</div><div class="sqm num">38,778 ₪/מ״ר</div></div>
+      <div class="row2"><span>08.2024</span><span>קומה 1/12</span><span class="feat yes">חניה</span><span class="feat yes">מעלית</span><span class="feat yes">ממ״ד</span></div>
+      <div class="src"><span>מתווך</span><a href="#">שורה מקורית</a></div>
+    </article>
+
+    <article class="deal">
+      <div><div class="title">דירה · 5 חד׳ · 109 מ״ר</div><div class="place">נאות יהודית, בן גוריון</div></div>
+      <div><div class="price num">3,583,000 ₪</div><div class="sqm num">32,872 ₪/מ״ר</div></div>
+      <div class="row2"><span>07.2024</span><span>קומה 5/12</span><span class="feat unk">חניה</span><span class="feat yes">מעלית</span><span class="feat no">ממ״ד</span></div>
+      <div class="src"><span>מתווך</span><a href="#">שורה מקורית</a></div>
+    </article>
+
+    <article class="deal">
+      <div><div class="title">דירה · 4 חד׳ · 100 מ״ר</div><div class="place">קריית שרת, ביאליק</div></div>
+      <div><div class="price num">3,826,000 ₪</div><div class="sqm num">38,260 ₪/מ״ר</div></div>
+      <div class="row2"><span>08.2025</span><span>קרקע/4</span><span class="feat no">חניה</span><span class="feat no">מעלית</span><span class="flag">״חדש מקבלן״ בבניין מ-1958</span></div>
+      <div class="src"><span>בעל נכס</span><a href="#">שורה מקורית</a></div>
+    </article>
+
+    <button class="btn btn-ghost showmore">עוד 3 עסקאות</button>
+  </section>
+
+  <section class="lead">
+    <div><h3>לשמור את החיפוש?</h3><p>נשלח לכם את 6 העסקאות.</p></div>
+    <form>
+      <div class="seg"><span class="on">וואטסאפ</span><span>מייל</span></div>
+      <input placeholder="שם">
+      <input placeholder="טלפון" dir="ltr">
+      <button class="btn btn-primary" type="button">שמירה</button>
+    </form>
+    <label class="check"><input type="checkbox"> גם דירות חדשות שמתאימות</label>
+  </section>
+
+  <p class="footer">מבוסס על כ-520 עסקאות מקובץ לדוגמה, 2021–2026. לא הערכת שווי.</p>
+</main>
+
+
+<!-- ============ 2. EMPTY / FIRST VISIT ============ -->
+<div class="mock-label">2 · Empty / first visit</div>
+<header class="top"><div class="brand">דירות<b>.</b>דומות</div><span></span></header>
+<main class="wrap">
+  <div class="hero">
+    <h1>כמה עלו דירות<br>כמו שאתם מחפשים?</h1>
+    <div class="search">
+      <input placeholder="למשל: 3 חדרים ברמת גן עד 3 מיליון" aria-label="מה אתם מחפשים?">
+      <button class="btn btn-primary btn-icon" aria-label="חיפוש">←</button>
+    </div>
+    <div class="examples">
+      <span class="chip">יש לי 2 מיליון, מחפש דירה</span>
+      <span class="chip">4 חדרים בחולון עם חניה</span>
+      <span class="chip">להשקעה עד 2.5 מיליון</span>
+    </div>
+    <p class="manual">או <a href="#">סינון ידני</a></p>
+  </div>
+</main>
+
+
+<!-- ============ 3. FALLBACK (assistant unavailable) ============ -->
+<div class="mock-label">3 · Fallback — assistant unavailable, filter sheet open</div>
+<header class="top"><div class="brand">דירות<b>.</b>דומות</div><span></span></header>
+<main class="wrap">
+  <div class="search">
+    <input value="דירת 4 חדרים בחולון עד 4.5 מיליון">
+    <button class="btn btn-primary btn-icon">←</button>
+  </div>
+  <div class="banner">העוזר לא זמין כרגע. הסינון עובד כרגיל.</div>
+
+  <div class="sheet">
+    <div class="sheet-h"><b>סינון</b><button class="link">ניקוי</button></div>
+    <div class="grid2">
+      <div class="field full"><label>מטרה</label>
+        <div class="toggles"><span class="chip on">למגורים</span><span class="chip">להשקעה</span></div></div>
+      <div class="field full"><label>עיר</label><div class="box">חולון</div></div>
+      <div class="field"><label>חדרים מ-</label><div class="box num">4</div></div>
+      <div class="field"><label>עד</label><div class="box ph">—</div></div>
+      <div class="field"><label>מחיר עד (₪)</label><div class="box num">4,500,000</div></div>
+      <div class="field"><label>שטח מ- (מ״ר)</label><div class="box ph">—</div></div>
+      <div class="field full"><label>חובה</label>
+        <div class="toggles"><span class="chip on">חניה</span><span class="chip">מעלית</span><span class="chip">ממ״ד</span><span class="chip">מרפסת</span></div></div>
+    </div>
+    <div class="actions"><button class="btn btn-primary">הצגת 6 עסקאות</button></div>
+  </div>
+
+  <section class="section">
+    <div class="answer" style="opacity:.7">
+      <span class="tag" style="color:var(--text-3)">✦ סיכום</span>
+      <p style="font-size:15px;color:var(--text-2)">אין סיכום כרגע. המספרים למטה מחושבים ישירות מהעסקאות.</p>
+    </div>
+  </section>
+</main>
+
+</body>
+</html>

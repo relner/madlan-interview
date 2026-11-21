@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>דירות דומות — כיוון C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f7f8; --surface:#fff; --sunken:#f2f2f4; --border:#e7e7eb; --border-strong:#d4d4da;
+  --text:#18181b; --muted:#6b6b76; --subtle:#a1a1aa;
+  --accent:#2f5bea; --accent-soft:#eef2fe; --accent-ring:#c9d6fb;
+  --up:#15803d; --down:#b91c1c; --warn:#a16207; --warn-soft:#fdf6e3;
+  --r-ctl:8px; --r-panel:12px;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px;
+  --pop:0 8px 24px rgba(24,24,27,.08), 0 1px 2px rgba(24,24,27,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Heebo,system-ui,sans-serif}
+h1,h2,h3,p{margin:0}
+button{font:inherit;cursor:pointer}
+.num{font-variant-numeric:tabular-nums}
+.ltr{direction:ltr;unicode-bidi:isolate}
+
+/* mockup chrome */
+.state-label{max-width:1240px;margin:var(--s6) auto var(--s2);padding:0 var(--s4);font-size:12px;font-weight:600;color:var(--subtle);letter-spacing:.04em}
+
+/* ---------- app shell ---------- */
+.app{container-type:inline-size;max-width:1240px;margin:0 auto;padding:0 var(--s4)}
+.shell{display:grid;grid-template-columns:320px minmax(0,1fr);gap:var(--s5);align-items:start}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-panel)}
+.side{position:sticky;top:var(--s4);display:flex;flex-direction:column;gap:var(--s3)}
+.brand{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) 0;font-weight:600;font-size:16px}
+.brand i{width:22px;height:22px;border-radius:6px;background:var(--accent);display:inline-block}
+
+/* ask */
+.ask{padding:var(--s3)}
+.ask__field{display:flex;align-items:flex-end;gap:var(--s2);border:1px solid var(--border-strong);border-radius:var(--r-ctl);padding:6px 6px 6px 10px;background:var(--surface)}
+.ask__field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+.ask textarea{flex:1;border:0;outline:0;resize:none;font:inherit;min-height:22px;max-height:96px;padding:4px 6px;background:transparent}
+.send{width:32px;height:32px;border:0;border-radius:6px;background:var(--accent);color:#fff;display:grid;place-items:center;flex:none}
+.send svg{width:16px;height:16px;transform:scaleX(-1)}
+.reply{margin-top:var(--s3);display:flex;gap:var(--s2);align-items:flex-start}
+.reply__dot{width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:8px;flex:none}
+.reply p{color:var(--text)}
+.reply small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.reply button.link{border:0;background:none;color:var(--accent);padding:0;font-size:12px}
+.examples{display:flex;flex-direction:column;gap:6px;margin-top:var(--s3)}
+.example{text-align:start;border:1px solid var(--border);background:var(--surface);border-radius:var(--r-ctl);padding:6px 10px;color:var(--muted);font-size:13px}
+.example:hover{border-color:var(--accent);color:var(--accent)}
+.status{display:flex;align-items:center;gap:var(--s2);font-size:12px;color:var(--warn);background:var(--warn-soft);border-radius:6px;padding:6px 10px;margin-top:var(--s3)}
+
+/* filters list */
+.filters__head{display:flex;justify-content:space-between;align-items:center;padding:var(--s3) var(--s3) var(--s2)}
+.eyebrow{font-size:12px;font-weight:600;color:var(--muted)}
+.ai-chip{font-size:11px;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:1px 8px}
+.flist{list-style:none;margin:0;padding:0 var(--s2) var(--s2)}
+.flist li{display:flex;justify-content:space-between;align-items:center;gap:var(--s2);padding:7px var(--s2);border-radius:6px;cursor:pointer}
+.flist li:hover{background:var(--sunken)}
+.flist .k{color:var(--muted)}
+.flist .v{font-weight:500;text-align:end}
+.flist .v.empty{color:var(--subtle);font-weight:400}
+.flist .ai{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;margin-inline-start:6px;vertical-align:middle}
+.seg{display:inline-flex;border:1px solid var(--border-strong);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:2px 10px;font-size:13px;color:var(--muted)}
+.seg button.on{background:var(--text);color:#fff}
+.filters__foot{display:flex;gap:var(--s2);padding:var(--s3);border-top:1px solid var(--border)}
+.btn{border:1px solid var(--border-strong);background:var(--surface);color:var(--text);border-radius:var(--r-ctl);padding:7px 14px;font-weight:500}
+.btn--primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn--ghost{border-color:transparent;color:var(--muted)}
+.btn--block{flex:1}
+/* expanded editor (one field open) */
+.editor{margin:2px var(--s2) var(--s2);padding:var(--s3);background:var(--sunken);border-radius:var(--r-ctl);display:grid;gap:var(--s2)}
+.editor .row{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
+.input{border:1px solid var(--border-strong);border-radius:6px;background:var(--surface);padding:6px 10px;font:inherit;width:100%}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:13px}
+.checks label{display:flex;gap:6px;align-items:center}
+
+/* ---------- results ---------- */
+.main{display:flex;flex-direction:column;gap:var(--s5);min-width:0;padding-top:var(--s2)}
+.rhead{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s3);flex-wrap:wrap}
+.rhead h1{font-size:28px;font-weight:600;letter-spacing:-.01em}
+.rhead h1 span{color:var(--muted);font-weight:400}
+.rhead .meta{color:var(--muted);font-size:13px}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r-panel);overflow:hidden}
+.kpi{background:var(--surface);padding:var(--s4);display:flex;flex-direction:column;gap:2px;position:relative}
+.kpi__label{font-size:12px;color:var(--muted)}
+.kpi__value{font-size:20px;font-weight:600}
+.kpi__n{font-size:12px;color:var(--subtle)}
+.kpi.used::after{content:"";position:absolute;inset-inline-end:12px;top:12px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.kpi.weak .kpi__value{color:var(--subtle)}
+.tag-weak{font-size:11px;color:var(--warn)}
+.up{color:var(--up)} .down{color:var(--down)}
+
+.ai-note{display:flex;gap:var(--s3);padding:var(--s4);border:1px solid var(--accent-ring);background:linear-gradient(0deg,var(--surface),var(--accent-soft));border-radius:var(--r-panel)}
+.ai-note__badge{flex:none;font-size:11px;font-weight:600;color:var(--accent);background:var(--surface);border:1px solid var(--accent-ring);border-radius:6px;padding:2px 6px;height:fit-content}
+.ai-note p{font-size:15px}
+.ai-note small{display:block;margin-top:6px;color:var(--muted);font-size:12px}
+.ai-note small i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin:0 2px;vertical-align:middle}
+.ai-note.off{border-color:var(--border);background:var(--surface)}
+.ai-note.off .ai-note__badge{color:var(--muted);border-color:var(--border)}
+
+.section-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:var(--s2)}
+.section-head h2{font-size:16px;font-weight:600}
+.section-head span{font-size:12px;color:var(--muted)}
+
+table{border-collapse:collapse;width:100%}
+.ttable th,.ttable td{padding:10px var(--s4);text-align:start;border-bottom:1px solid var(--border);white-space:nowrap}
+.ttable th{font-size:12px;font-weight:500;color:var(--muted);background:var(--sunken)}
+.ttable tr:last-child td{border-bottom:0}
+.ttable td.r{text-align:end}
+.ttable .n{color:var(--subtle);font-size:12px;margin-inline-start:4px}
+.ttable tr.muted td{color:var(--subtle)}
+.ttable tr.used td:first-child{box-shadow:inset -3px 0 0 var(--accent)}
+.reason{font-size:12px}
+.more{display:block;width:100%;border:0;border-top:1px solid var(--border);background:var(--surface);padding:10px;color:var(--muted);font-size:13px;border-radius:0 0 var(--r-panel) var(--r-panel)}
+.foot-note{font-size:12px;color:var(--subtle);margin-top:var(--s2)}
+
+/* deals */
+.drow{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1.4fr) 92px 120px 96px 28px;gap:var(--s3);align-items:center;padding:12px var(--s4);border-bottom:1px solid var(--border);cursor:pointer}
+.drow:hover{background:#fbfbfc}
+.drow.head{cursor:default;background:var(--sunken);font-size:12px;color:var(--muted);padding-block:8px}
+.drow .t{font-weight:500}
+.drow .s{color:var(--muted);font-size:13px}
+.drow .p{text-align:end;font-weight:600}
+.drow .q{text-align:end;color:var(--muted);font-size:13px}
+.drow .chev{color:var(--subtle);text-align:center}
+.warn-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--warn);margin-inline-start:6px;vertical-align:middle}
+.ddetail{padding:var(--s3) var(--s4) var(--s4);background:#fbfbfc;border-bottom:1px solid var(--border);display:grid;gap:var(--s3)}
+.facts-inline{display:flex;flex-wrap:wrap;gap:var(--s4);font-size:13px}
+.facts-inline b{font-weight:500}
+.facts-inline span{color:var(--muted)}
+.feats{display:flex;flex-wrap:wrap;gap:6px}
+.feat{font-size:12px;border-radius:999px;padding:1px 10px;border:1px solid var(--border)}
+.feat.yes{background:#ecfdf3;border-color:#c7ecd5;color:var(--up)}
+.feat.no{color:var(--subtle);text-decoration:line-through}
+.feat.unk{border-style:dashed;color:var(--muted)}
+.flag{font-size:12px;color:var(--warn);background:var(--warn-soft);border-radius:6px;padding:1px 8px}
+.raw{font-size:12px;border:1px solid var(--border);border-radius:var(--r-ctl);overflow:hidden;max-width:520px}
+.raw td,.raw th{padding:3px 10px;border-bottom:1px solid var(--border);text-align:start}
+.raw th{font-family:ui-monospace,Menlo,monospace;color:var(--muted);font-weight:400;width:40%}
+.link{border:0;background:none;color:var(--accent);padding:0;font-size:13px}
+
+/* lead */
+.lead{display:flex;justify-content:space-between;align-items:center;gap:var(--s4);padding:var(--s4) var(--s5);flex-wrap:wrap}
+.lead h2{font-size:16px;font-weight:600}
+.lead p{color:var(--muted);font-size:13px}
+.lead form{display:flex;gap:var(--s2);flex-wrap:wrap;align-items:center}
+.lead .input{width:auto;min-width:150px}
+.lead .consent{flex-basis:100%;font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
+
+/* empty */
+.empty{padding:var(--s7) var(--s5);text-align:center;display:grid;gap:var(--s3);justify-items:center}
+.empty h1{font-size:28px;font-weight:600}
+.empty p{color:var(--muted);max-width:420px}
+.steps{display:flex;gap:var(--s5);margin-top:var(--s3);color:var(--muted);font-size:13px;flex-wrap:wrap;justify-content:center}
+.steps b{color:var(--text);font-weight:600;margin-inline-end:4px}
+
+.footer{color:var(--subtle);font-size:12px;padding:var(--s5) 0 var(--s6)}
+
+/* mobile trigger + sheet (hidden on desktop) */
+.mfilter{display:none}
+.sheet{display:none}
+
+/* ---------- phone (container query: also renders inside the 375px preview) ---------- */
+@container (max-width: 760px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:var(--s4)}
+  .side{position:static}
+  .side .filters{display:none}
+  .mfilter{display:flex;justify-content:space-between;align-items:center;gap:var(--s2);padding:10px var(--s3);border:1px solid var(--border);border-radius:var(--r-ctl);background:var(--surface);font-size:13px}
+  .mfilter b{font-weight:500}
+  .rhead h1{font-size:22px}
+  .kpis{grid-template-columns:1fr 1fr}
+  .drow{grid-template-columns:minmax(0,1fr) auto;row-gap:2px}
+  .drow.head{display:none}
+  .drow .s{grid-column:1}
+  .drow .d{grid-column:1;font-size:12px;color:var(--muted)}
+  .drow .p{grid-row:1;grid-column:2}
+  .drow .q{grid-row:2;grid-column:2}
+  .drow .chev{display:none}
+  .ttable th,.ttable td{padding:8px 10px}
+  .ttable .col-early{display:none}
+  .lead{padding:var(--s4)}
+  .lead form,.lead .input{width:100%}
+  .sheet{display:block;position:absolute;inset-inline:0;bottom:0;background:var(--surface);border-radius:16px 16px 0 0;box-shadow:var(--pop);padding:var(--s2) var(--s4) var(--s4)}
+  .sheet__grab{width:36px;height:4px;border-radius:2px;background:var(--border-strong);margin:0 auto var(--s3)}
+}
+.phone-wrap{display:flex;gap:var(--s6);flex-wrap:wrap;justify-content:center;padding:0 var(--s4) var(--s7)}
+.phone{width:375px;height:760px;border:1px solid var(--border-strong);border-radius:32px;overflow:hidden;background:var(--bg);position:relative;box-shadow:var(--pop)}
+.phone .scroll{height:100%;overflow:auto;padding-top:var(--s4)}
+.phone .app{padding:0 var(--s4)}
+.scrim{position:absolute;inset:0;background:rgba(24,24,27,.32)}
+</style>
+</head>
+<body>
+
+<!-- ======================= 1. RESULTS (desktop) ======================= -->
+<div class="state-label">1 · תוצאות — דסקטופ</div>
+<div class="app">
+  <div class="shell">
+    <aside class="side">
+      <div class="brand"><i></i>דירות דומות</div>
+
+      <section class="panel ask">
+        <div class="ask__field">
+          <textarea rows="1" placeholder="מה אתם מחפשים?">דירה בחולון למגורים</textarea>
+          <button class="send" aria-label="שליחה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+        <div class="reply">
+          <span class="reply__dot"></span>
+          <div>
+            <p>כמה חדרים, ומה התקציב?</p>
+            <small>הנחתי: "דירה" = כל סוגי הנכסים · <button class="link">שינוי</button></small>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel filters">
+        <div class="filters__head"><span class="eyebrow">סינון</span><span class="ai-chip">מולא ע"י AI</span></div>
+        <ul class="flist">
+          <li><span class="k">מטרה</span><span class="seg"><button class="on">מגורים</button><button>השקעה</button></span></li>
+          <li><span class="k">עיר</span><span class="v">חולון<span class="ai"></span></span></li>
+          <li><span class="k">שכונה</span><span class="v empty">הכול</span></li>
+          <li><span class="k">סוג נכס</span><span class="v empty">הכול</span></li>
+          <li><span class="k">חדרים</span><span class="v empty">—</span></li>
+          <li><span class="k">שטח</span><span class="v empty">—</span></li>
+          <li><span class="k">מחיר</span><span class="v empty">—</span></li>
+          <li><span class="k">חובה</span><span class="v empty">—</span></li>
+        </ul>
+        <div class="filters__foot"><button class="btn btn--primary btn--block">חיפוש</button><button class="btn btn--ghost">ניקוי</button></div>
+      </section>
+    </aside>
+
+    <main class="main">
+      <div class="rhead">
+        <h1 class="num">39 עסקאות <span>· חולון</span></h1>
+        <span class="meta num">2021–2026 · החדשות קודם</span>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><span class="kpi__label">עסקאות</span><span class="kpi__value num">39</span><span class="kpi__n">כולן בחישוב</span></div>
+        <div class="kpi used"><span class="kpi__label">מחיר חציוני</span><span class="kpi__value num">3,583,000 ₪</span><span class="kpi__n num">n=39</span></div>
+        <div class="kpi used"><span class="kpi__label">חציון למ"ר</span><span class="kpi__value num">38,918 ₪</span><span class="kpi__n num">n=37</span></div>
+        <div class="kpi used"><span class="kpi__label">שינוי למ"ר</span><span class="kpi__value num down ltr">−0.7%</span><span class="kpi__n num">2021–23 → 2024–26</span></div>
+      </div>
+
+      <section class="ai-note">
+        <span class="ai-note__badge">AI</span>
+        <div>
+          <p>בחולון נמצאו 39 עסקאות. המחיר החציוני למ"ר כמעט לא השתנה: 39,169 ₪ ב-2021–2023 מול 38,907 ₪ ב-2024–2026.</p>
+          <small>מספרים מסומנים ב-<i></i> נבדקו מול הנתונים.</small>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head"><h2>מחיר למ"ר לפי עיר</h2><span>בסוגריים: מספר עסקאות</span></div>
+        <div class="panel" style="overflow:hidden">
+          <table class="ttable num">
+            <thead><tr><th>עיר</th><th class="col-early">2021–2023</th><th>2024–2026</th><th class="r">שינוי</th></tr></thead>
+            <tbody>
+              <tr><td>ראשון לציון</td><td class="col-early">30,013 <span class="n">(10)</span></td><td>35,885 <span class="n">(19)</span></td><td class="r up ltr">+19.6%</td></tr>
+              <tr><td>נתניה</td><td class="col-early">37,662 <span class="n">(13)</span></td><td>40,608 <span class="n">(22)</span></td><td class="r up ltr">+7.8%</td></tr>
+              <tr><td>אשדוד</td><td class="col-early">26,985 <span class="n">(11)</span></td><td>29,008 <span class="n">(13)</span></td><td class="r up ltr">+7.5%</td></tr>
+              <tr class="used"><td>חולון</td><td class="col-early">39,169 <span class="n">(17)</span></td><td>38,907 <span class="n">(20)</span></td><td class="r down ltr">−0.7%</td></tr>
+              <tr class="muted"><td>ירושלים</td><td class="col-early">— <span class="n">(11)</span></td><td>— <span class="n">(10)</span></td><td class="r reason">תמהיל השתנה</td></tr>
+              <tr class="muted"><td>תל אביב-יפו</td><td class="col-early">— <span class="n">(8)</span></td><td>— <span class="n">(13)</span></td><td class="r reason">מעט עסקאות</td></tr>
+            </tbody>
+          </table>
+          <button class="more">עוד 12 ערים</button>
+        </div>
+        <p class="foot-note">שינוי מוצג רק מ-10 עסקאות בכל תקופה. עבר, לא תחזית.</p>
+      </section>
+
+      <section class="panel lead">
+        <div><h2>לשמור את החיפוש?</h2><p>נשלח לכם את 39 העסקאות.</p></div>
+        <form onsubmit="return false">
+          <input class="input" placeholder="שם">
+          <input class="input ltr" placeholder="טלפון לוואטסאפ" style="text-align:right">
+          <button class="btn btn--primary">שמירה</button>
+          <label class="consent"><input type="checkbox"> עדכנו אותי על דירות חדשות · <button class="link" type="button">מייל במקום</button></label>
+        </form>
+      </section>
+
+      <section>
+        <div class="section-head"><h2>עסקאות</h2><span class="num">7 מתוך 39</span></div>
+        <div class="panel" style="overflow:hidden">
+          <div class="drow head"><span>נכס</span><span>שכונה</span><span>תאריך</span><span style="text-align:end">מחיר</span><span style="text-align:end">למ"ר</span><span></span></div>
+
+          <div class="drow num"><span class="t">פנטהאוז · 4.5 חד' · 188 מ"ר</span><span class="s">נאות יהודית</span><span class="d">22.07.2026</span><span class="p">9,228,000 ₪</span><span class="q">49,085</span><span class="chev">⌄</span></div>
+          <div class="drow num"><span class="t">בית פרטי · 2.5 חד' · 84 מ"ר</span><span class="s">ג'סי כהן</span><span class="d">22.07.2026</span><span class="p">3,953,000 ₪</span><span class="q">47,060</span><span class="chev">⌄</span></div>
+
+          <!-- expanded row -->
+          <div class="drow num" style="background:#fbfbfc;border-bottom:0"><span class="t">בית פרטי · 4 חד' · 135 מ"ר<span class="warn-dot" title="יש הערה"></span></span><span class="s">קריית שרת</span><span class="d">27.05.2026</span><span class="p">8,502,000 ₪</span><span class="q">62,978</span><span class="chev">⌃</span></div>
+          <div class="ddetail">
+            <div class="facts-inline num"><span>קומה <b>0/2</b></span><span>שנת בנייה <b>1987</b></span><span>מקור <b>רשות המסים</b></span><span>מזהה <b class="ltr">D100188</b></span></div>
+            <div class="feats"><span class="feat no">חניה</span><span class="feat yes">מעלית</span><span class="feat yes">ממ"ד</span><span class="feat no">מרפסת</span><span class="flag">"חדש מקבלן" בבניין ישן</span></div>
+            <button class="link" style="justify-self:start">הסתרת השורה המקורית</button>
+            <table class="raw"><tbody>
+              <tr><th class="ltr">city</th><td>חולון</td></tr>
+              <tr><th class="ltr">condition</th><td>חדש מקבלן</td></tr>
+              <tr><th class="ltr">year_built</th><td>1987</td></tr>
+              <tr><th class="ltr">has_parking</th><td>no</td></tr>
+              <tr><th class="ltr">price_nis</th><td>8502000</td></tr>
+              <tr><th class="ltr">source</th><td>רשות המסים</td></tr>
+            </tbody></table>
+          </div>
+
+          <div class="drow num"><span class="t">דירה · 2 חד' · 59 מ"ר</span><span class="s">ג'סי כהן</span><span class="d">19.05.2026</span><span class="p">2,532,000 ₪</span><span class="q">42,915</span><span class="chev">⌄</span></div>
+          <div class="drow num"><span class="t">דירה · 1 חד' · 21 מ"ר<span class="warn-dot"></span></span><span class="s">תל גיבורים</span><span class="d">09.04.2026</span><span class="p">772,000 ₪</span><span class="q">36,762</span><span class="chev">⌄</span></div>
+          <div class="drow num"><span class="t">דופלקס · 2.5 חד' · 73 מ"ר</span><span class="s">נאות יהודית</span><span class="d">08.03.2026</span><span class="p">2,841,000 ₪</span><span class="q">38,918</span><span class="chev">⌄</span></div>
+          <div class="drow num" style="border-bottom:0"><span class="t">דירה · 3.5 חד' · 95 מ"ר</span><span class="s">ג'סי כהן</span><span class="d">04.03.2026</span><span class="p">3,953,000 ₪</span><span class="q">41,611</span><span class="chev">⌄</span></div>
+          <button class="more">עוד 32</button>
+        </div>
+      </section>
+
+      <p class="footer">עסקאות מקובץ לדוגמה, 2021–2026. לא הערכת שווי.</p>
+    </main>
+  </div>
+</div>
+
+<!-- ======================= 2. FIRST STATE ======================= -->
+<div class="state-label">2 · מצב ראשון</div>
+<div class="app">
+  <div class="shell">
+    <aside class="side">
+      <div class="brand"><i></i>דירות דומות</div>
+      <section class="panel ask">
+        <div class="ask__field">
+          <textarea rows="1" placeholder="מה אתם מחפשים?"></textarea>
+          <button class="send" aria-label="שליחה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+        <div class="examples">
+          <button class="example">4 חדרים בחולון עם חניה, עד 3 מיליון</button>
+          <button class="example">יש לי 2 מיליון, מחפש דירה</button>
+          <button class="example">דירה להשקעה עד 2.5 מיליון</button>
+        </div>
+      </section>
+      <section class="panel filters">
+        <div class="filters__head"><span class="eyebrow">או לסנן ידנית</span></div>
+        <ul class="flist">
+          <li><span class="k">מטרה</span><span class="seg"><button>מגורים</button><button>השקעה</button></span></li>
+          <li><span class="k">עיר</span><span class="v empty">בחרו</span></li>
+          <li><span class="k">חדרים</span><span class="v empty">—</span></li>
+          <li><span class="k">מחיר</span><span class="v empty">—</span></li>
+          <li><span class="k">עוד</span><span class="v empty">שכונה, שטח, חובה</span></li>
+        </ul>
+        <div class="filters__foot"><button class="btn btn--primary btn--block">חיפוש</button></div>
+      </section>
+    </aside>
+    <main class="main">
+      <section class="panel empty">
+        <h1>כמה עלו דירות דומות?</h1>
+        <p>עסקאות אמיתיות מהעבר, עם המספרים שמאחורי כל מסקנה.</p>
+        <div class="steps"><span><b>1</b>מתארים</span><span><b>2</b>בודקים את הסינון</span><span><b>3</b>רואים עסקאות</span></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- ======================= 3. FALLBACK STATE ======================= -->
+<div class="state-label">3 · העוזר לא זמין (הטופס פתוח לעריכה)</div>
+<div class="app">
+  <div class="shell">
+    <aside class="side">
+      <div class="brand"><i></i>דירות דומות</div>
+      <section class="panel ask">
+        <div class="ask__field">
+          <textarea rows="1" placeholder="מה אתם מחפשים?">4 חדרים בנתניה</textarea>
+          <button class="send" aria-label="שליחה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+        <div class="status">● העוזר לא זמין. הטופס עובד.</div>
+      </section>
+      <section class="panel filters">
+        <div class="filters__head"><span class="eyebrow">סינון</span></div>
+        <ul class="flist">
+          <li><span class="k">מטרה</span><span class="seg"><button class="on">מגורים</button><button>השקעה</button></span></li>
+          <li style="background:var(--sunken)"><span class="k">עיר</span><span class="v">נתניה</span></li>
+        </ul>
+        <div class="editor">
+          <select class="input"><option>נתניה</option></select>
+          <div class="row"><input class="input" placeholder="חדרים מ-" value="4"><input class="input" placeholder="עד"></div>
+          <div class="row"><input class="input" placeholder="מחיר מ-"><input class="input" placeholder="עד"></div>
+          <div class="checks"><label><input type="checkbox"> חניה</label><label><input type="checkbox"> מעלית</label><label><input type="checkbox"> ממ"ד</label><label><input type="checkbox"> מרפסת</label></div>
+        </div>
+        <div class="filters__foot"><button class="btn btn--primary btn--block">חיפוש</button><button class="btn btn--ghost">ניקוי</button></div>
+      </section>
+    </aside>
+    <main class="main">
+      <div class="rhead"><h1 class="num">13 עסקאות <span>· נתניה · 4+ חד'</span></h1></div>
+      <div class="kpis">
+        <div class="kpi"><span class="kpi__label">עסקאות</span><span class="kpi__value num">13</span><span class="kpi__n">כולן בחישוב</span></div>
+        <div class="kpi"><span class="kpi__label">מחיר חציוני</span><span class="kpi__value num">4,120,000 ₪</span><span class="kpi__n num">n=13</span></div>
+        <div class="kpi"><span class="kpi__label">חציון למ"ר</span><span class="kpi__value num">38,400 ₪</span><span class="kpi__n num">n=13</span></div>
+        <div class="kpi weak"><span class="kpi__label">שינוי למ"ר</span><span class="kpi__value">—</span><span class="tag-weak">מעט עסקאות</span></div>
+      </div>
+      <section class="ai-note off">
+        <span class="ai-note__badge">AI</span>
+        <div><p>אין סיכום כרגע. המספרים מחושבים ישירות מהעסקאות.</p></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- ======================= 4. PHONE ======================= -->
+<div class="state-label">4 · טלפון (375px): תוצאות · גיליון סינון</div>
+<div class="phone-wrap">
+  <div class="phone"><div class="scroll"><div class="app">
+    <div class="shell">
+      <aside class="side">
+        <section class="panel ask">
+          <div class="ask__field"><textarea rows="1" placeholder="מה אתם מחפשים?">דירה בחולון למגורים</textarea><button class="send" aria-label="שליחה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+          <div class="reply"><span class="reply__dot"></span><div><p>כמה חדרים, ומה התקציב?</p></div></div>
+        </section>
+        <button class="mfilter"><span>סינון: <b>חולון · מגורים</b></span><span style="color:var(--accent)">עריכה</span></button>
+      </aside>
+      <main class="main">
+        <div class="rhead"><h1 class="num">39 עסקאות <span>· חולון</span></h1></div>
+        <div class="kpis">
+          <div class="kpi"><span class="kpi__label">עסקאות</span><span class="kpi__value num">39</span></div>
+          <div class="kpi used"><span class="kpi__label">מחיר חציוני</span><span class="kpi__value num">3,583,000 ₪</span><span class="kpi__n">n=39</span></div>
+          <div class="kpi used"><span class="kpi__label">חציון למ"ר</span><span class="kpi__value num">38,918 ₪</span><span class="kpi__n">n=37</span></div>
+          <div class="kpi used"><span class="kpi__label">שינוי למ"ר</span><span class="kpi__value num down ltr">−0.7%</span><span class="kpi__n">21–23 → 24–26</span></div>
+        </div>
+        <section class="ai-note"><span class="ai-note__badge">AI</span><div><p>המחיר החציוני למ"ר בחולון כמעט לא השתנה: 39,169 ₪ מול 38,907 ₪.</p></div></section>
+        <section>
+          <div class="section-head"><h2>עסקאות</h2><span>7 מתוך 39</span></div>
+          <div class="panel" style="overflow:hidden">
+            <div class="drow num"><span class="t">פנטהאוז · 4.5 חד'</span><span class="p">9,228,000 ₪</span><span class="s">נאות יהודית · 188 מ"ר</span><span class="q">49,085 למ"ר</span><span class="d">22.07.2026</span></div>
+            <div class="drow num"><span class="t">בית פרטי · 2.5 חד'</span><span class="p">3,953,000 ₪</span><span class="s">ג'סי כהן · 84 מ"ר</span><span class="q">47,060 למ"ר</span><span class="d">22.07.2026</span></div>
+            <div class="drow num" style="border-bottom:0"><span class="t">דירה · 2 חד'</span><span class="p">2,532,000 ₪</span><span class="s">ג'סי כהן · 59 מ"ר</span><span class="q">42,915 למ"ר</span><span class="d">19.05.2026</span></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div></div></div>
+
+  <div class="phone"><div class="scroll"><div class="app">
+    <div class="shell"><main class="main">
+      <div class="rhead"><h1 class="num">39 עסקאות <span>· חולון</span></h1></div>
+      <div class="kpis">
+        <div class="kpi"><span class="kpi__label">עסקאות</span><span class="kpi__value num">39</span></div>
+        <div class="kpi"><span class="kpi__label">מחיר חציוני</span><span class="kpi__value num">3,583,000 ₪</span></div>
+      </div>
+    </main></div>
+  </div></div>
+    <div class="scrim"></div>
+    <div class="app" style="position:absolute;inset:0;padding:0;pointer-events:none"><div class="sheet" style="pointer-events:auto">
+      <div class="sheet__grab"></div>
+      <div class="filters__head" style="padding:0 0 var(--s2)"><span class="eyebrow">סינון</span><span class="ai-chip">מולא ע"י AI</span></div>
+      <ul class="flist" style="padding:0">
+        <li><span class="k">מטרה</span><span class="seg"><button class="on">מגורים</button><button>השקעה</button></span></li>
+        <li><span class="k">עיר</span><span class="v">חולון<span class="ai"></span></span></li>
+        <li><span class="k">שכונה</span><span class="v empty">הכול</span></li>
+        <li><span class="k">סוג נכס</span><span class="v empty">הכול</span></li>
+        <li><span class="k">חדרים</span><span class="v empty">—</span></li>
+        <li><span class="k">מחיר</span><span class="v empty">—</span></li>
+        <li><span class="k">חובה</span><span class="v empty">—</span></li>
+      </ul>
+      <div class="filters__foot" style="padding:var(--s3) 0 0"><button class="btn btn--primary btn--block">הצגת 39 עסקאות</button><button class="btn btn--ghost">ניקוי</button></div>
+    </div></div>
+  </div>
+</div>
+
+</body>
+</html>

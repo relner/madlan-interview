@@ -1,0 +1,21 @@
+<form class="query" [class.query--static]="mode !== 'bar'" (ngSubmit)="submit()">
+    <input
+        name="query"
+        [(ngModel)]="text"
+        [maxlength]="maxLength"
+        [disabled]="parsing"
+        [placeholder]="mode === 'welcome' ? 'למשל: יש לי 2 מיליון, מחפש דירה' : mode === 'chat' ? 'תשובה…' : 'לשנות משהו? למשל: גם ברמת גן'"
+        aria-label="מה אתם מחפשים?"
+        autocomplete="off">
+    <button class="send" type="submit" [disabled]="parsing || !text.trim()" aria-label="חיפוש">
+        @if (parsing) { <mat-spinner diameter="18" class="send__spinner"></mat-spinner> } @else { ← }
+    </button>
+</form>
+
+@if (mode === 'welcome') {
+    <div class="examples">
+        @for (e of examples; track e.id) {
+            <button type="button" class="pill" (click)="useExample(e)" [disabled]="parsing">{{ e.text }}</button>
+        }
+    </div>
+}

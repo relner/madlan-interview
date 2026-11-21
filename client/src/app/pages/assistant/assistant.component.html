@@ -1,0 +1,115 @@
+<mat-sidenav-container class="shell" hasBackdrop="true">
+    <mat-sidenav #sheet mode="over" position="start" class="sheet" autoFocus="false">
+        <app-filters-form
+            [options]="options()"
+            [filters]="filters()"
+            [resultCount]="result()?.total ?? null"
+            [searching]="searching()"
+            (searchRequested)="onSheetSearch($event)"
+            (closed)="sheet.close()">
+        </app-filters-form>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+        @switch (phase()) {
+            @case ('welcome') {
+                <section class="welcome">
+                    <h1>כמה עלו דירות דומות?</h1>
+                    <p class="welcome__sub">ספרו מה אתם מחפשים, ונראה כמה שילמו בפועל על נכסים דומים</p>
+                    <p class="welcome__note">לא דירות למכירה · עסקאות שכבר נסגרו, 2021–2026</p>
+                    <app-chat-box mode="welcome" [parsing]="parsing()" [examples]="examples()" (send)="onMessage($event)" (example)="onExample($event)"></app-chat-box>
+                    <div class="center">
+                        <button class="pill pill--ghost" type="button" (click)="openSheet()">או סינון ידני</button>
+                    </div>
+                </section>
+            }
+
+            @case ('chat') {
+                <section class="chat">
+                    <app-chat-thread [messages]="messages()" [parsing]="parsing()" (reply)="onReply($event)"></app-chat-thread>
+
+                    <div class="chat__dock">
+                        <app-chat-box mode="chat" [parsing]="parsing()" (send)="onMessage($event)"></app-chat-box>
+                        <div class="chat__state">
+                            <app-filter-pills
+                                [filters]="filters()"
+                                [aiFilled]="filledByAssistant()"
+                                [assumptions]="assumptions()"
+                                (changed)="onFiltersChanged($event)"
+                                (openSheet)="openSheet()">
+                            </app-filter-pills>
+                            <button type="button" class="link link--strong" (click)="searchNow()" [disabled]="parsing()">להציג עסקאות עכשיו ←</button>
+                        </div>
+                    </div>
+                </section>
+            }
+
+            @case ('results') {
+                <main class="page">
+                    <app-chat-box mode="bar" [parsing]="parsing()" (send)="onMessage($event)"></app-chat-box>
+
+                    <div class="results-bar">
+                        <app-filter-pills
+                            [filters]="filters()"
+                            [aiFilled]="filledByAssistant()"
+                            [assumptions]="assumptions()"
+                            (changed)="onFiltersChanged($event)"
+                            (openSheet)="openSheet()">
+                        </app-filter-pills>
+                        <button type="button" class="pill pill--ghost reset" (click)="reset()">↺ חיפוש חדש</button>
+                    </div>
+
+                    @if (!assistantAvailable()) {
+                        <div class="banner">העוזר לא זמין · הסינון עובד כרגיל</div>
+                    } @else if (parsing()) {
+                        <div class="assistant-line"><span class="spark">✦</span><span class="shimmer">חושב…</span></div>
+                    } @else if (lastAssistant(); as line) {
+                        <div class="assistant-line">
+                            <span class="spark">✦</span><span>{{ line.text }}@if (line.question?.hint; as hint) { <span class="meta"> · {{ hint }}</span> }</span>
+                            @if (line.question; as q) {
+                                @for (o of q.options; track o.id) {
+                                    <button type="button" class="pill" (click)="onReply({ question: q, option: o })">{{ o.label }}</button>
+                                }
+                            }
+                        </div>
+                    }
+
+                    @if (searchError()) {
+                        <div class="banner">החיפוש נכשל · נסו שוב</div>
+                    }
+
+                    @if (result(); as r) {
+                        <app-advice-panel
+                            [facts]="explanation()?.facts ?? r.facts"
+                            [explanation]="explanation()"
+                            [explaining]="explaining()">
+                        </app-advice-panel>
+
+                        <app-facts-panel
+                            [facts]="r.facts"
+                            [filters]="r.filters"
+                            [explanation]="explanation()"
+                            [explaining]="explaining()">
+                        </app-facts-panel>
+
+                        <app-lead-form [filters]="r.filters" [total]="r.total"></app-lead-form>
+
+                        <app-deal-list [deals]="r.deals" [total]="r.total"></app-deal-list>
+                    } @else {
+                        <app-advice-panel [explaining]="true"></app-advice-panel>
+                        <div class="bento bento--loading" aria-busy="true">
+                            <div class="tile tile--hero skeleton"></div>
+                            <div class="tile skeleton"></div>
+                            <div class="tile skeleton"></div>
+                        </div>
+                    }
+
+                    <footer class="footer">נתוני דוגמה · לא הערכת שווי</footer>
+                </main>
+            }
+        }
+    </mat-sidenav-content>
+</mat-sidenav-container>
+
+<!-- Cost of every interaction in this session (WORK_PLAN.md 8.4) -->
+<app-token-counter [class.raised]="phase() === 'chat'"></app-token-counter>
