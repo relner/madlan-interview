@@ -28,6 +28,14 @@ module.exports.llmCacheTtlSeconds = Number(process.env.LLM_CACHE_TTL_SECONDS || 
 // Stored advice (collection 'advice') lives 24 hours: the same filters within a day get it without a model call
 module.exports.adviceTtlSeconds = Number(process.env.ADVICE_TTL_SECONDS || 86400);
 
+// Buyer-vocabulary retrieval (rag service). Empty RAG_URL turns it off.
+// Short timeout: it runs before the parse call, which the buyer is already waiting for.
+module.exports.ragUrl = process.env.RAG_URL === undefined ? 'http://rag:4000' : process.env.RAG_URL;
+module.exports.ragTimeoutMs = Number(process.env.RAG_TIMEOUT_MS || 1500);
+// Salt for the buyer hash sent with learned wishes (rag counts different buyers, never sees an IP).
+// Set your own in .env: with the default, a hash of an IPv4 address could be reversed by trying them all.
+module.exports.voterSalt = process.env.VOTER_SALT || 'madlan-default-voter-salt';
+
 module.exports.rateLimitWindowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
 module.exports.rateLimitMaxRequests = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 20);
 module.exports.messageMaxLength = Number(process.env.MESSAGE_MAX_LENGTH || 500);

@@ -52,7 +52,7 @@ async function callStructured({ kind, system, userContent, schema, timeoutMs }) 
         }, requestOptions(timeoutMs));
     } catch (error) {
         const reason = error instanceof Anthropic.APIConnectionTimeoutError ? 'timeout' : 'api_error';
-        logger.warn({ llm: kind, model, ms: Date.now() - startedAt, reason }, 'llm call failed');
+        logger.warn({ llm: kind, model, ms: Date.now() - startedAt, reason, status: error.status, err: error.message?.slice(0, 300) }, 'llm call failed');
         throw new LlmUnavailableError(reason, error);
     }
 
@@ -111,9 +111,19 @@ Filters:
 
 Example: "דירת 4 חדרים בחולון עם חניה וממ"ד עד 3 מיליון" → changes {"cities":["חולון"],"roomsMin":4,"requireParking":true,"requireSafeRoom":true,"priceMax":3000000}.
 
+Buyer vocabulary — check it first. "vocabulary" (when present) lists entries from our curated table that matched words in the message, e.g. "דירה נעימה" → {"sizeMax":70}. They are our definition of those words.
+Code applies every entry's filters after your changes. So:
+- Do not copy entry filters into changes, and do not ask about those words: the entry already answers what they mean.
+- A value the message states explicitly goes into changes and wins over an entry ("ליד הים בנתניה" → cities ["נתניה"]).
+- ignoredConcepts: ids of entries the message does not actually express (matched by accident, or negated: "לא חייב ליד הים"). Usually [].
+- Do not repeat an entry's meaning in assumptions: code shows it to the buyer.
+newWishes: vague wishes in the message that no vocabulary entry covers and that you turned into filters in changes (e.g. "דירה לסטודנטים" → roomsMax).
+- phrase: the buyer's words for the wish, 2–4 words as written ("דירה לסטודנטים", not "לסטודנטים"), no numbers, no city names. fields: the names of the changes fields that come from this wish.
+- Not for explicit criteria (rooms, budget, a city, "עם חניה") and not for wishes you could not turn into filters. Usually [].
+
 skippedSlots: the slots the buyer said do not matter (e.g. "לא משנה איפה" → ["city"]). Values: purpose, kind, city, rooms, budget.
 wantsResults: true when the buyer asks to see results now ("תראה", "מה יש", "חפש").
-ownQuestion: only when the message is unclear in a way the fixed list does not cover — a place that is not in the allowed list, contradictory requirements, a vague wish ("good for a family"). Natural simple Hebrew, max 15 words, with 2–4 short ownQuickReplies. Otherwise null and [].
+ownQuestion: only when the message is unclear in a way the fixed list does not cover — a place that is not in the allowed list, contradictory requirements, a vague wish that no vocabulary entry covers. Natural simple Hebrew, max 15 words, with 2–4 short ownQuickReplies. Otherwise null and [].
 The data is past, closed deals (2021–2026), not homes for sale. Never offer or promise listings ("נמצא לך דירה"); ask about which past deals to compare with ("להשוות לעסקאות ב…").
 assumptions: short Hebrew notes on anything you interpreted rather than read directly.`;
 
@@ -124,7 +134,13 @@ const parseOutputSchema = z.object({
     wantsResults: z.boolean(),
     ownQuestion: z.string().nullable(),
     ownQuickReplies: z.array(z.string()),
-    assumptions: z.array(z.string())
+    assumptions: z.array(z.string()),
+    // ids of retrieved vocabulary entries the message does not express; all others are applied by code
+    ignoredConcepts: z.array(z.string()),
+    // vague wishes not in the table, with the model's reading: votes for new table rows (rag learning)
+    // fields, not values: the values are taken from changes (a second partial filters object would exceed
+    // the API limit of 24 optional parameters per schema, and repeat the same values in the output)
+    newWishes: z.array(z.object({ phrase: z.string(), fields: z.array(z.string()) }))
 });
 
 // The allowed values are static per dataset, so they go into the system prompt, which is cached.
@@ -147,8 +163,14 @@ function buildParseSystem(allowedValues) {
 
 // The model gets the current state (filters + its last question), not the whole chat: cheaper, and enough
 // to understand a short answer like "למגורים" (WORK_PLAN.md 8.4).
-async function parseRequest({ message, currentFilters, lastQuestion, allowedValues }) {
-    const userContent = JSON.stringify({ currentFilters: compact(currentFilters), answeringQuestion: lastQuestion, message });
+// vocabulary: concepts the rag service retrieved for this message (only id, the wish and its filters:
+// the meaning text is added to assumptions by code, so it costs no output tokens).
+async function parseRequest({ message, currentFilters, lastQuestion, allowedValues, vocabulary = [] }) {
+    const input = { currentFilters: compact(currentFilters), answeringQuestion: lastQuestion, message };
+    if (vocabulary.length) {
+        input.vocabulary = vocabulary.map((c) => ({ id: c.id, wish: c.title, matchedWords: c.matchedText, filters: c.filters }));
+    }
+    const userContent = JSON.stringify(input);
     return callStructured({ kind: 'parse', system: buildParseSystem(allowedValues), userContent, schema: parseOutputSchema, timeoutMs: llmParseTimeoutMs });
 }
 

@@ -10,6 +10,8 @@ const { validateAdvice } = require('../services/grounding.service');
 const { sanitizeFilters, emptyFilters } = require('../validators/filters.validators');
 const { factsOptions } = require('../helpers/configuration');
 const { EXAMPLES } = require('../utils/examples');
+const { findConcepts, learnWishes } = require('../services/rag.service');
+const { applyConcepts, cleanWishes } = require('../utils/concepts');
 const { nextQuestion, applyAnswer, recordLearnedQuestion, cleanAnswered } = require('../services/conversation.service');
 
 // Every response says where the answer came from: 'cache' | 'llm' | 'fallback'.
@@ -61,7 +63,7 @@ module.exports.parse = async function(req, res) {
             // An example may also say that a slot does not matter ("לא משנה איפה"), like skippedSlots from the LLM
             const exampleAnswered = cleanAnswered(example.skipped || []);
             const step = await nextStep({ filters, answered: exampleAnswered, questionsAsked: 0 });
-            return res.status(200).json({ source: 'bank', filters, rejected: [], answered: exampleAnswered, assumptions: [], usage: null, ...step });
+            return res.status(200).json({ source: 'bank', filters, rejected: [], answered: exampleAnswered, assumptions: [], concepts: [], usage: null, ...step });
         }
 
         // ---------- quick reply: no LLM ----------
@@ -75,7 +77,7 @@ module.exports.parse = async function(req, res) {
             const { filters } = sanitizeFilters(applied.filters, allowed);
             answered = cleanAnswered([...answered, applied.slot]);
             const step = await nextStep({ filters, answered, questionsAsked });
-            return res.status(200).json({ source: 'bank', filters, rejected: [], answered, assumptions: [], usage: null, ...step });
+            return res.status(200).json({ source: 'bank', filters, rejected: [], answered, assumptions: [], concepts: [], usage: null, ...step });
         }
 
         // ---------- free text: LLM extracts the filters ----------
@@ -83,7 +85,14 @@ module.exports.parse = async function(req, res) {
             return res.status(400).json({ message: 'message is required' });
         }
         const lastQuestion = typeof req.body.lastQuestion === 'string' ? req.body.lastQuestion.slice(0, 200) : null;
-        const cacheKey = { prompt: PROMPT_VERSIONS.parse, text: cache.normalizeText(req.body.message), currentFilters, lastQuestion };
+        // Buyer vocabulary first (rag service): the concepts this message expresses go to the model as our
+        // definitions. Their ids and the table version are in the cache key: editing the table never serves an old parse.
+        const rag = await findConcepts(req.body.message);
+        const vocabulary = rag.matches;
+        const cacheKey = {
+            prompt: PROMPT_VERSIONS.parse, text: cache.normalizeText(req.body.message), currentFilters, lastQuestion,
+            concepts: vocabulary.map((c) => c.id), conceptsVersion: rag.version
+        };
 
         let output = await cache.get('parse', cacheKey);
         let source = output ? 'cache' : 'llm';
@@ -91,14 +100,14 @@ module.exports.parse = async function(req, res) {
         let usage = null;
         if (!output) {
             try {
-                ({ output, usage } = await parseRequest({ message: req.body.message, currentFilters, lastQuestion, allowedValues: allowed }));
+                ({ output, usage } = await parseRequest({ message: req.body.message, currentFilters, lastQuestion, allowedValues: allowed, vocabulary }));
             } catch (error) {
                 if (!(error instanceof LlmUnavailableError)) throw error;
                 logger.warn({ reason: error.reason }, 'parse fallback');
                 return res.status(200).json({
                     source: 'fallback', reason: error.reason,
                     filters: currentFilters, rejected: [], answered, assumptions: [],
-                    question: null, readyToSearch: true, usage: null
+                    question: null, readyToSearch: true, usage: null, concepts: []
                 });
             }
             await cache.set('parse', cacheKey, output);
@@ -106,8 +115,18 @@ module.exports.parse = async function(req, res) {
 
         // The model's output is checked like any user input: unknown cities, impossible ranges are dropped.
         // The model returns only the fields it changed; everything else keeps its current value
-        const { filters, rejected } = sanitizeFilters({ ...currentFilters, ...(output.changes || {}) }, allowed);
+        // Vocabulary concepts are applied by code (utils/concepts.js); the model's explicit values win.
+        // Their meaning is shown as an assumption, written by us, not by the model: the buyer sees exactly
+        // how a vague word was read and can change it in the form.
+        const { changes, applied } = applyConcepts(output.changes, vocabulary, output.ignoredConcepts);
+        const { filters, rejected } = sanitizeFilters({ ...currentFilters, ...changes }, allowed);
         answered = cleanAnswered([...answered, ...(output.skippedSlots || [])]);
+        const concepts = applied.map(({ id, title, meaning, basis }) => ({ id, title, meaning, basis }));
+        const assumptions = [...new Set([...applied.map((c) => c.meaning), ...(output.assumptions || [])])];
+
+        // New vague wishes → votes for new table rows (rag enables a row after 3 different buyers).
+        // Only from a fresh model call: a cache hit is the same message again, not a new buyer's reading.
+        if (source === 'llm') learnWishes(cleanWishes(output.newWishes, output.changes, (f) => sanitizeFilters(f, allowed)), req.ip);
 
         let ownQuestion = null;
         if (output.ownQuestion) {
@@ -117,7 +136,7 @@ module.exports.parse = async function(req, res) {
         }
 
         const step = await nextStep({ filters, answered, questionsAsked, wantsResults: output.wantsResults, ownQuestion });
-        res.status(200).json({ source, filters, rejected, answered, assumptions: output.assumptions || [], usage, ...step });
+        res.status(200).json({ source, filters, rejected, answered, assumptions, concepts, usage, ...step });
     } catch (error) {
         errorHandler(res, error);
     }

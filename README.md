@@ -58,7 +58,7 @@ The CSV is cleaned once by a seed script ([api/scripts/seed.js](api/scripts/seed
 
 ## How filters are set
 
-There is one filter contract for the whole app: city, neighborhood, property type, rooms, area, price, must-haves (parking, elevator, safe room, balcony), purpose, and an optional **offered price**. It is filled in four ways:
+There is one filter contract for the whole app: city, neighborhood, property type, rooms, area, price, must-haves (parking, elevator, safe room, balcony), purpose, and an optional **offered price**. It is filled in five ways:
 
 | Source | How | LLM? |
 |---|---|---|
@@ -66,6 +66,7 @@ There is one filter contract for the whole app: city, neighborhood, property typ
 | **Example requests** on the welcome screen | 15 presets with fixed filters ([api/src/utils/examples.js](api/src/utils/examples.js)), each checked against the data | No |
 | **The filter form** | The buyer picks values from lists built from the data | No |
 | **Free text** ("4 חדרים בחולון עם חניה עד 3 מיליון") | The model returns only the fields the message sets or changes. If the message is unclear in a way the bank does not cover, it may ask its own clarifying question. | Yes |
+| **Buyer vocabulary** ("דירה נעימה", "שכונה לא יקרה", "להשקעה") | Checked first, before the model: the rag service finds which rows of the vocabulary table the message expresses ([Buyer vocabulary](#buyer-vocabulary-the-table-and-the-rag-service)). | No (local embeddings) |
 
 Whatever the source, the server checks the filters before searching:
 - Cities, neighborhoods and types must exist in the data.
@@ -101,6 +102,125 @@ A recommendation that fails is dropped and logged. If nothing passes, the panel 
 
 ---
 
+## Buyer vocabulary: the table and the rag service
+
+Buyers write wishes, not filters: "דירה נעימה ליד הים", "שכונה לא יקרה", "דירה לסטודנטים". Left to the model, the same words got a different reading each time: four different explanations for "דירה לסטודנטים" in four messages, and once an extra `sizeMax: 75`. The vocabulary gives every such wish **one definition**, kept in a table, applied by code and shown to the buyer.
+
+Two parts:
+- **The table**: the `concepts` collection in MongoDB. It holds what each wish means.
+- **The rag service**: a separate container. It finds which rows of the table a message expresses, and it adds new rows learned from buyers' messages.
+
+### The table: `concepts` in MongoDB
+
+One collection; the vectors are stored in the same documents, there is no separate vector store.
+
+```
+{ conceptId:  "cozy",
+  title:      "דירה נעימה",
+  examples:   ["דירה נעימה", "דירה קטנה ונעימה", "משהו קטן וחמים", ...],
+  meaning:    "פירשנו "דירה נעימה" כדירה עד 70 מ״ר",
+  filters:    { sizeMax: 70 },
+  basis:      "curated",
+  source:     "seed",
+  enabled:    true,
+  embeddings: [[…384 numbers], …],
+  examplesHash, embeddingModel }
+```
+
+| Field | What it is | Written by |
+|---|---|---|
+| `examples` | How buyers phrase the wish. A message matches a row by its closest example | us (seed) or learned from messages |
+| `filters` | What the wish means, as a part of the filter contract. Validated by the api like any input | us, or the reading 3 buyers agreed on |
+| `meaning` | Shown to the buyer as an assumption | us, or code from the filters (never the model) |
+| `basis` | `data`: computed from the deals; `curated`: our interpretation; `learned`: from buyers' messages | |
+| `source` | `seed`: from [rag/data/concepts.js](rag/data/concepts.js); `llm`: learned | |
+| `enabled` | Only enabled rows are used for search | seed: true; learned: true after 3 matching readings |
+| `interpretations`, `hits` | Learned rows only: each reading the model gave and which buyers (hashed) got it | rag service |
+| `embeddings`, `examplesHash` | One vector per example, and the examples they were computed from | rag service |
+
+**Where rows come from**
+
+1. **Our rows.** There are 13 of them, written in [rag/data/concepts.js](rag/data/concepts.js) and loaded with `npm run seed`.
+
+   | Wish | Filters | Basis |
+   |---|---|---|
+   | דירה נעימה | up to 70 sqm (≤ 60 had only 38 deals in 18 cities) | curated |
+   | ליד הים | the coastal cities in the data | curated |
+   | אזור לא יקר | the 5 cities with the lowest median price per sqm | data |
+   | להשקעה | purpose = invest | curated |
+   | משפחה עם ילדים | 4+ rooms, to live in | curated |
+   | … | 8 more: first home for a couple, spacious, luxury, garden, near Tel Aviv, accessible, safe room, quiet and green | |
+
+2. **Learned rows.** These are added by the rag service from buyers' messages (see below). The seed never touches them.
+
+### The rag service
+
+A Node.js container with a local multilingual embedding model (`multilingual-e5-small`, about 130 MB, baked into the image). It runs on CPU, needs no API key and costs no tokens. It is reachable only from the api, on the internal Docker network.
+
+| Endpoint | Called by | What it does |
+|---|---|---|
+| `POST /concepts/search {text}` | api, on every free-text message | Returns the enabled rows the message expresses (up to 3) |
+| `POST /concepts/learn {voter, wishes}` | api, after a model call that met new wishes | Adds votes and candidates; enables a row after 3 matching readings |
+| `POST /concepts/reload` | the seed, or by hand | Re-reads the table now |
+| `GET /health` | docker healthcheck | Number of rows and candidates, table version |
+
+The service keeps the table with its vectors in memory. A search compares a few hundred short vectors in about 100 ms, so the table needs no vector database.
+
+### Using the table on a message
+
+1. **Retrieve.** The service cuts the message into 2–4-word windows: "רוצה לגור קרוב לים עד 3 מיליון" contains "קרוב לים". It embeds them and compares them with every example. A row matches above 0.95 cosine.
+   - Whole messages are not compared: the other parts pull them toward unrelated rows. Single words ("דירה", "עם") are left out too: they scored up to 0.95 against everything.
+   - On the calibration sentences, real matches scored 0.955–0.998 and the strongest false one 0.944 ([rag/test/calibration.test.js](rag/test/calibration.test.js)).
+2. **The model decides.** The matched rows go into the parse request. The model only says which ones the message does *not* express (an accidental or negated match: "לא חייב ליד הים") and sets explicit values.
+3. **Code applies.** The row filters are added after the model's changes. An explicit value wins: "ליד הים בנתניה" → Netanya only. Code applies them, not the model, because Sonnet kept asking about rows that are a list of cities even when told to apply them.
+4. **The buyer sees it.** Each applied row's meaning is shown as an assumption, and the form shows the resulting filters.
+
+### When the table grows: learning new wishes
+
+1. **The model reports a new wish.** A message has a vague wish that no row covers, and the model turned it into filters. In the same call it reports the phrase and the names of the fields, for example `{phrase: "דירה לסטודנטים", fields: ["roomsMax"]}`. There is no extra call and only a few output tokens.
+2. **The api cleans it.** It takes the values from the model's changes and keeps only fields a word may define. Price is never learned, because a budget is personal. The phrase must be 2–4 words without numbers, because the search only compares 2–4-word windows. The api sends the wish to rag as a vote from a salted hash of the buyer's IP, so no IP is stored. This is fire and forget: the buyer never waits for it.
+3. **rag compares the phrase with every row**, enabled or not:
+   - close to an enabled row (≥ 0.95): nothing to learn;
+   - close to a candidate: one more vote for this reading, and the phrase is added to its examples;
+   - new: a new candidate, disabled.
+4. **A candidate is enabled when 3 different buyers got exactly the same reading** (`RAG_MIN_VOTES`). One buyer cannot enable a row alone, and a reading the model gives inconsistently never becomes a definition. The meaning is written by code from the filters: "פירשנו "דירה לסטודנטים" כ: עד 3 חדרים".
+
+**Measured.** Before the row existed, each of four messages got a different explanation, and one got an extra `sizeMax: 75`. After the third buyer, the next messages got the same filter and the same wording.
+
+### What the service does when the table changes
+
+No timer: the table changes only through the service itself or the seed, so each change comes with its own trigger.
+
+| Change | Trigger | What the service does |
+|---|---|---|
+| Service starts | startup | Loads the model, reads the table, embeds rows whose examples changed, starts listening |
+| Our rows edited in `concepts.js` | `npm run seed` → the seed calls `/concepts/reload` | Re-reads the table, embeds only the changed rows (`examplesHash`), replaces its copy |
+| A vote, a new candidate, a row enabled | `/concepts/learn` | Writes the row with its vector, refreshes its copy at once |
+| A hand edit in MongoDB (for example `enabled: false`) | call `/concepts/reload`, or restart | Same as a seed reload |
+
+Every refresh changes the **table version**. The api puts it, with the matched row ids, in the parse cache key, so a changed table never serves an old parse. `RAG_RELOAD_INTERVAL_MS` can turn on a periodic re-read as well; it is off by default.
+
+### Failures and limits
+
+- **rag down or slow (1.5 s limit):** the message is parsed without the table, as before. A failed vote is one vote less.
+- **Synonyms are not merged:** "קרוב לפארק" and "ליד פארק" become two candidates and collect votes separately. Synonyms scored 0.903, while different wishes ("דירה לסטודנטים" / "דירה למשפחה") scored 0.919, so no threshold separates them safely.
+- **Votes are counted by IP:** people behind one router count as one, and someone who changes IP three times could enable a row. A bad row is disabled by hand: `enabled: false`, then `/concepts/reload`.
+- **The "data" rows are computed once:** "אזור לא יקר" lists the 5 cheapest cities in the current deals. After a new deals seed, recompute it in `concepts.js` and run the rag seed.
+- **The first call after a schema change is slow:** the Claude API compiles the output schema once (about 25 s), and that call falls back to the form. Send one warm-up message after a deploy.
+- **Cost:** no tokens for search or learning. About 100 ms per message, about 500 MB of RAM for the service, and a 940 MB image.
+
+**Operating it**
+
+```bash
+docker compose run --rm rag npm run seed      # load or update our rows; reloads the service
+docker compose exec mongo mongosh madlan --eval 'db.concepts.find({source: "llm"}, {title: 1, enabled: 1, filters: 1, hits: 1})'
+docker compose exec api node -e "fetch('http://rag:4000/concepts/reload', {method: 'POST'}).then(r => r.json()).then(console.log)"
+```
+
+Settings: `RAG_MIN_VOTES` (3), `RAG_MIN_SCORE` (0.95) and `RAG_MAX_RESULTS` (3) in the rag service; `RAG_URL`, `RAG_TIMEOUT_MS` and `VOTER_SALT` (set your own) in `api/.env`.
+
+---
+
 ## When tokens are spent, and when not
 
 | Interaction | Model call? | Typical cost |
@@ -109,7 +229,8 @@ A recommendation that fails is dropped and logged. If nothing passes, the panel 
 | Click on an example request | **No.** A preset with fixed filters. | $0 |
 | Search from the filter form | **No.** | $0 |
 | Free-text message seen before (same text and state) | **No.** Parse cache, 7 days. | $0 |
-| Free-text message, new | **Yes:** parse, Sonnet 5.5 | ≈ $0.002 |
+| Free-text message, new | **Yes:** parse, Sonnet 5.5 | ≈ $0.0015–0.002 |
+| Buyer vocabulary: search and learning (rag service) | **No.** Local embeddings in the container. New wishes add a few output tokens to the same parse call. | $0 |
 | Advice for filters seen in the last 24 hours | **No.** Stored advice (Mongo collection `advice`, TTL 24 h). | $0 |
 | Advice for new filters | **Yes:** explain, Haiku 5.5 | ≈ $0.0003 |
 | Model slow or unavailable | Fallback to the form or to plain facts | $0 |
@@ -160,11 +281,13 @@ cp api/.env.example api/.env               # set ANTHROPIC_API_KEY
 docker compose up -d --build               # nginx :80 → client + api, mongo
 docker compose --profile tools run --rm seed   # load and clean the CSV (api/data/deals_raw.csv)
 docker compose restart api                 # reload the form options after a seed
+docker compose run --rm rag npm run seed   # load the buyer vocabulary (rag/data/concepts.js)
 ```
 
 Then open http://localhost.
 
-- Tests: `cd api && npm test` (47 tests: filters, data cleaning, question bank and examples, advice, grounding).
+- Concepts table: `docker compose run --rm rag npm run seed` (once; it never touches learned rows). At the end the seed calls the service's `/concepts/reload`, so changes are live at once. Learned rows: `db.concepts.find({source: 'llm'})`, disable one with `enabled: false` and call `/concepts/reload`. Set `VOTER_SALT` in `api/.env`.
+- Tests: `cd api && npm test` (55 tests: filters, data cleaning, question bank and examples, advice, grounding, rag client, concepts) and `cd rag && npm test` (retrieval, the table, calibration on the real model).
 - Models: `LLM_PARSE_MODEL`, `LLM_EXPLAIN_MODEL`, or `LLM_MODEL` to set both.
 - Advice lifetime: `ADVICE_TTL_SECONDS`, default 86400.
 
@@ -174,9 +297,10 @@ Everything runs from one [docker-compose.yml](docker-compose.yml) on a private D
 
 ```
 browser ──► nginx :80 ──┬── /      ──► client   (Angular app, static files)
-                        └── /api/* ──► api      (Node.js / Express) ──► mongo (MongoDB 7)
-                                                     │
-                                                     └──► Claude API (Anthropic, external)
+                        └── /api/* ──► api      (Node.js / Express)
+                                        ├──► mongo (MongoDB 7)
+                                        ├──► rag   (buyer vocabulary, local embeddings) ──► mongo
+                                        └──► Claude API (Anthropic, external)
 seed (one-off) ──► reads api/data/deals_raw.csv ──► mongo
 ```
 
@@ -185,7 +309,8 @@ seed (one-off) ──► reads api/data/deals_raw.csv ──► mongo
 | **nginx** | `nginx:1.27-alpine`, port 80 | Single entry point: `/` → client, `/api` → api. Request size limit, proxy timeout. HTTPS is added on the server. |
 | **client** | Angular 21 build served by `serve` | The UI: chat, results, filter form, token counter. Hebrew, RTL, mobile and desktop. |
 | **api** | Node.js 22 / Express | All logic: search, statistics and trends, advice comparisons, LLM calls, grounding checks, caches, leads. Rate limit per IP. |
-| **mongo** | MongoDB 7, volume `mongo_data` | Collections: `deals` (cleaned data with original rows), `advice` (stored advice, 24 h), `llm_caches` (parse cache, 7 days), `learned_questions` (questions the model asked itself, for review), `leads`. TTL indexes remove expired cache entries. |
+| **rag** | Node.js 22 / Express, `@huggingface/transformers` | Buyer vocabulary retrieval: which concepts a message expresses; learns new ones from buyers' messages (3 matching readings). Local embedding model baked into the image (~130 MB), vectors kept in Mongo, searched in memory. Internal only, called by api. |
+| **mongo** | MongoDB 7, volume `mongo_data` | Collections: `deals` (cleaned data with original rows), `concepts` (buyer vocabulary with embeddings), `advice` (stored advice, 24 h), `llm_caches` (parse cache, 7 days), `learned_questions` (questions the model asked itself, for review), `leads`. TTL indexes remove expired cache entries. |
 | **seed** | Same image as api, profile `tools` | One-off job: cleans the CSV, loads `deals`, writes `api/data/seed_report.json`. Not running in normal operation. |
 | **Claude API** | External (Anthropic) | Two kinds of calls only: **parse** (free text → filters, Sonnet 5.5) and **explain** (facts → advice, Haiku 5.5). The key lives in `api/.env` (gitignored). |
 
@@ -203,4 +328,8 @@ api/
   test/
 client/src/app/pages/assistant/  chat, results (advice panel, facts, deals), filter form, token counter
 documentation/                   WORK_PLAN.md (decisions, measurements, AI work log), brief, designs
+rag/
+  data/concepts.js               the buyer vocabulary (seed for the `concepts` collection)
+  src/services/                  embedding (local model), retrieval (windows, ranking), index (table in memory)
+  test/                          retrieval, the table, calibration on the real model
 ```

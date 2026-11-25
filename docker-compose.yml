@@ -36,6 +36,32 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+      rag:
+        condition: service_started   # optional for the api: without it, messages are parsed without concepts
+    networks:
+      - madlan_network
+
+  # Buyer vocabulary retrieval: which curated concepts ("דירה נעימה", "להשקעה") a message expresses.
+  # Local embedding model baked into the image; no ports published, only the api calls it.
+  # Fill the table once with: docker compose run --rm rag npm run seed
+  rag:
+    build: ./rag
+    container_name: madlan-rag
+    command: npm run start
+    restart: unless-stopped
+    environment:
+      - PORT=4000
+      - MONGO_URI=mongodb://mongo:27017/madlan
+      - NODE_ENV=production
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
     networks:
       - madlan_network
 

@@ -1,0 +1,19 @@
+{
+  "name": "madlan-rag",
+  "version": "1.0.0",
+  "description": "Buyer vocabulary retrieval: finds the curated concepts ('cozy', 'cheap area', 'for investment') that a Hebrew message expresses, by local embeddings",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index",
+    "seed": "node scripts/seed.js",
+    "download-model": "node scripts/download-model.js",
+    "test": "node --test test/*.test.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@huggingface/transformers": "3.8.1",
+    "express": "^4.21.2",
+    "mongoose": "^8.9.0",
+    "pino": "^9.6.0"
+  }
+}

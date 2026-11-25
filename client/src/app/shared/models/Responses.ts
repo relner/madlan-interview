@@ -47,6 +47,15 @@ export interface AssistantQuestion {
     options: QuestionOption[];
 }
 
+// A buyer-vocabulary concept the assistant applied (rag service), e.g. "דירה נעימה" → up to 70 sqm.
+// Its meaning is also in `assumptions`, so it is shown with the other interpretations.
+export interface AppliedConcept {
+    id: string;
+    title: string;
+    meaning: string;
+    basis: 'data' | 'curated';
+}
+
 export interface ParseResponse {
     source: AnswerSource | 'bank';
     reason?: string;
@@ -56,6 +65,7 @@ export interface ParseResponse {
     question: AssistantQuestion | null;
     readyToSearch: boolean;
     assumptions: string[];
+    concepts?: AppliedConcept[];
     usage?: LlmUsage | null;
 }
 
