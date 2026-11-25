@@ -4,6 +4,9 @@ FROM node:22-bookworm-slim
 WORKDIR /usr/src/app
 
 COPY package*.json ./
+# CPU only: on linux/x64 onnxruntime-node otherwise tries to download its CUDA (GPU) binaries at install,
+# and that download failed with 404 on the server. The model runs on CPU, so the GPU part is not needed.
+ENV ONNXRUNTIME_NODE_INSTALL_CUDA=skip
 RUN npm install --omit=dev
 
 COPY . .
