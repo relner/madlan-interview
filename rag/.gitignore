@@ -1,2 +1,3 @@
 node_modules/
-models/
+# The downloaded embedding model (rag/models/), not src/models/
+/models/
